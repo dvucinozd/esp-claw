@@ -1,0 +1,5 @@
+board: xiao_esp32s3_sense_lcd
+chip: esp32s3
+version: 1.0.0
+description: "Seeed Studio XIAO ESP32S3 Sense with SPI LCD"
+manufacturer: "Seeed Studio"

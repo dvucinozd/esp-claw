@@ -111,6 +111,33 @@ static void app_config_apply_legacy_llm_profile(app_config_t *config)
     }
 }
 
+static void app_config_normalize_llm_backend_type(app_config_t *config)
+{
+    if (!config || config->llm_backend_type[0] == '\0') {
+        return;
+    }
+
+    if (strcmp(config->llm_backend_type, "openai") == 0 ||
+        strcmp(config->llm_backend_type, "qwen") == 0 ||
+        strcmp(config->llm_backend_type, "deepseek") == 0 ||
+        strcmp(config->llm_backend_type, "openai_compatible") == 0 ||
+        strcmp(config->llm_backend_type, "custom_openai_compatible") == 0) {
+        strlcpy(config->llm_backend_type, "openai_compatible", sizeof(config->llm_backend_type));
+        return;
+    }
+
+    if (strcmp(config->llm_backend_type, "claude") == 0 ||
+        strcmp(config->llm_backend_type, "anthropic") == 0) {
+        strlcpy(config->llm_backend_type, "anthropic", sizeof(config->llm_backend_type));
+        return;
+    }
+
+    if (strcmp(config->llm_backend_type, "custom") == 0 ||
+        strcmp(config->llm_backend_type, "custom_backend") == 0) {
+        strlcpy(config->llm_backend_type, "custom", sizeof(config->llm_backend_type));
+    }
+}
+
 esp_err_t app_config_init(void)
 {
     return settings_store_init(&(settings_store_config_t) {
@@ -152,6 +179,7 @@ esp_err_t app_config_load(app_config_t *config)
     }
 
     app_config_apply_legacy_llm_profile(config);
+    app_config_normalize_llm_backend_type(config);
     return ESP_OK;
 }
 

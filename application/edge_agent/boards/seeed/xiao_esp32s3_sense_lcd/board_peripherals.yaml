@@ -1,0 +1,41 @@
+version: 1.0.0
+# Peripherals Configuration for XIAO ESP32S3 Sense + SPI LCD
+peripherals:
+  - name: i2c_master
+    type: i2c
+    role: master
+    config:
+      # Onboard camera SCCB
+      port: 1
+      pins:
+        sda: 40
+        scl: 39
+
+  - name: spi_display
+    type: spi
+    role: master
+    config:
+      spi_bus_config:
+        spi_port: SPI3_HOST
+        data0_io_num: 5
+        sclk_io_num: 4
+        max_transfer_sz: 6400
+
+  - name: i2s_pdm_mic
+    type: i2s
+    role: master
+    format: pdm-in
+    config:
+      port: 0
+      sample_rate_hz: 16000
+      mclk_multiple: 256
+      data_bit_width: 16
+      slot_bit_width: I2S_SLOT_BIT_WIDTH_AUTO
+      slot_mode: I2S_SLOT_MODE_MONO
+      slot_mask: I2S_PDM_SLOT_LEFT
+      pins:
+        clk: 42
+        din: 41
+        dout: -1
+        ws: -1
+        mclk: -1

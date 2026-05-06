@@ -211,6 +211,11 @@ esp_err_t claw_llm_runtime_init(claw_llm_runtime_t **out_runtime,
     backend_type = config->backend_type && config->backend_type[0] ?
                    config->backend_type : profile->default_backend_type;
     backend = find_backend(backend_type);
+    if (!backend && config->backend_type && config->backend_type[0]) {
+        /* Gracefully recover from stale/legacy backend strings in persisted settings. */
+        backend_type = profile->default_backend_type;
+        backend = find_backend(backend_type);
+    }
     if (!backend) {
         *out_error_message = strdup("Unknown LLM backend type");
         return ESP_ERR_NOT_SUPPORTED;
