@@ -84,6 +84,7 @@ endif()
 
 if(CONFIG_APP_CLAW_CAP_TIME)
     list(APPEND app_claw_requires cap_time)
+    list(APPEND app_claw_requires wifi_manager)
 endif()
 
 if(CONFIG_APP_CLAW_CAP_WEB_SEARCH)

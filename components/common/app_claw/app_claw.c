@@ -35,6 +35,7 @@
 #endif
 #if CONFIG_APP_CLAW_CAP_TIME
 #include "cap_time.h"
+#include "wifi_manager.h"
 #endif
 
 static const char *TAG = "app_claw";
@@ -265,6 +266,17 @@ static void app_time_sync_success(bool had_valid_time, void *ctx)
 }
 #endif
 
+#if CONFIG_APP_CLAW_CAP_TIME
+static bool app_time_network_ready(void *ctx)
+{
+    wifi_manager_status_t status = {0};
+
+    (void)ctx;
+    wifi_manager_get_status(&status);
+    return status.sta_connected;
+}
+#endif
+
 esp_err_t app_claw_start(const app_claw_config_t *config,
                          const app_claw_storage_paths_t *paths)
 {
@@ -413,7 +425,8 @@ esp_err_t app_claw_start(const app_claw_config_t *config,
 
 #if CONFIG_APP_CLAW_CAP_TIME
     ESP_ERROR_CHECK(cap_time_sync_service_start(&(cap_time_sync_service_config_t) {
-                        .network_ready = NULL,
+                        .network_ready = app_time_network_ready,
+                        .network_ready_ctx = NULL,
 #if CONFIG_APP_CLAW_CAP_SCHEDULER
                         .on_sync_success = app_time_sync_success,
 #else
