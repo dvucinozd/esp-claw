@@ -70,7 +70,7 @@ def main() -> int:
     stamp_path = Path(args.stamp_path).resolve()
     depfile_path = Path(args.depfile).resolve()
 
-    sources = collect_build_component_sources(build_dir, name_prefix='lua_module_')
+    sources = collect_build_component_sources(build_dir, name_prefix=('lua_module_', 'lua_driver_'))
     plan = collect_lua_module_docs(sources, output_dir, manifest_path)
     plan.apply()
     write_depfile(depfile_path, stamp_path, plan.input_paths)

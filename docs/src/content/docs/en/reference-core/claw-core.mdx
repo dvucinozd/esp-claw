@@ -34,7 +34,7 @@ Applications submit with `claw_core_submit` and read `claw_core_response_t` via 
 
 The Event Router's `run_agent` action sets both flags to enable an asynchronous submit + event-published response path.
 
-When assembling the **current-turn user prompt** sent to the LLM, `claw_core` also appends **Behavior Notes**: since the framework usually auto-delivers the final assistant result to users, you generally do not need to proactively call each IM `cap_im_*` send API to return the same text (to avoid duplicate replies).
+When assembling the **current-turn user prompt** sent to the LLM, `claw_core` also appends **Behavior Notes**: since the framework usually auto-delivers the final assistant result to users, you generally do not need to proactively call IM send APIs from `cap_im_platform` to return the same text (to avoid duplicate replies).
 
 <Aside type="tip" title="Output detailed Agent tool-call progress">
     `claw_core` supports detailed Agent tool-call progress output.

@@ -10,6 +10,7 @@ import { Button } from '../components/ui/Button';
 import { Switch } from '../components/ui/Switch';
 import { Banner } from '../components/ui/Banner';
 import { ConfigTable } from '../components/ui/ConfigTable';
+import { RestartConfirmModal } from '../components/system/RestartConfirmModal';
 
 const SENTINEL_NONE = '__none__';
 
@@ -60,7 +61,7 @@ function serializeSelection(
 
 type FilterMode = 'all' | 'enabled' | 'llm';
 
-export const CapabilitiesPage: Component = () => {
+export const CapabilitiesPage: Component<{ onRestartRequest: () => void }> = (props) => {
   const tab = createConfigTab<CapForm>({
     tab: 'capabilities',
     groups: ['capabilities'],
@@ -99,6 +100,7 @@ export const CapabilitiesPage: Component = () => {
 
   const [filter, setFilter] = createSignal<FilterMode>('all');
   const [search, setSearch] = createSignal('');
+  const [confirmOpen, setConfirmOpen] = createSignal(false);
 
   const enabledSet = createMemo(() => new Set(tab.form.enabled));
   const llmSet = createMemo(() => new Set(tab.form.llmVisible));
@@ -154,6 +156,11 @@ export const CapabilitiesPage: Component = () => {
 
   const clearLlm = () => {
     tab.setForm('llmVisible', []);
+  };
+
+  const handleSave = async () => {
+    await tab.save();
+    setConfirmOpen(true);
   };
 
   const summary = () =>
@@ -268,9 +275,18 @@ export const CapabilitiesPage: Component = () => {
       <SavePanel
         dirty={tab.dirty()}
         saving={tab.saving()}
-        onSave={() => tab.save().catch(() => undefined)}
+        onSave={() => handleSave().catch(() => undefined)}
         onDiscard={tab.discard}
         note={t('restartHint') as string}
+      />
+      <RestartConfirmModal
+        open={confirmOpen()}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          props.onRestartRequest();
+        }}
+        subtitle={t('restartHint') as string}
       />
     </TabShell>
   );

@@ -36,7 +36,7 @@ That yields fully local, low-latency responses without network or model cost.
 
 ### 3. Rapid prototyping / extension surface
 
-Users who do not ship C firmware can still extend behavior via Lua. Native modules registered as `lua_module_*` expose peripherals through small Lua APIs.
+Users who do not ship C firmware can still extend behavior via Lua. Native modules registered as `lua_module_*` / `lua_driver_*` expose peripherals through small Lua APIs.
 
 ## Lua runtime sketch
 
@@ -44,14 +44,14 @@ ESP-Claw runs Lua via `cap_lua_runtime_*` helpers. The runtime initializes in `c
 
 ### Script path management
 
-`cap_lua` runtime files must live under the Script Base Dir. In `edge_agent`, the default Script Base Dir is `/fatfs/scripts/` (apps can override it via `cap_lua_set_base_dir`).
+Writable `cap_lua` runtime scripts must live under the Script Base Dir. In `edge_agent`, the default Script Base Dir is `/fatfs/scripts/` (apps can override it via `cap_lua_set_base_dir`). Read-only scripts bundled with Skills may run from `/fatfs/skills/<skill_id>/scripts/...`.
 
-- `path` must target a `.lua` file under Script Base Dir.
+- `path` must target a `.lua` file.
 - `path` supports two forms:
-- Absolute path: e.g. `/fatfs/scripts/hello.lua` (must stay under Base Dir and must not contain `..`).
-- Short relative name: e.g. `hello.lua` (auto-expanded to `${base_dir}/hello.lua`, and `/` is not allowed).
-- `lua_list_scripts` currently scans only the Base Dir top level and returns absolute paths (non-recursive).
-- `lua_list_scripts.prefix` also uses an absolute-path prefix and must stay under Base Dir.
+  - Short relative path: e.g. `hello.lua` or `demo/hello.lua` (auto-expanded to `${base_dir}/...` and must not contain `..`).
+  - Skill read-only script absolute path: e.g. `/fatfs/skills/light_switch/scripts/led_strip_switch.lua` (normally produced by `{CUR_SKILL_DIR}` expansion, must stay under the Skill root, and must not contain `..`).
+- `lua_list_scripts` recursively scans the Script Base Dir and returns relative paths.
+- `lua_list_scripts.prefix` uses a relative-path prefix, and `keyword` does case-insensitive matching against relative paths.
 
 ### Module registration lock
 
@@ -60,7 +60,7 @@ ESP-Claw runs Lua via `cap_lua_runtime_*` helpers. The runtime initializes in `c
 ```c
 // During app init (before cap_lua_register_group)
 lua_module_display_register();   // register display
-lua_module_gpio_register();      // register gpio
+lua_driver_gpio_register();      // register gpio
 // ...
 cap_lua_register_group();        // then lock
 ```
@@ -186,14 +186,12 @@ running -> stopped
 
 `lua_list_async_jobs` filters with `"all"` / `"queued"` / `"running"` / `"done"` / `"failed"` / `"timeout"` / `"stopped"`.
 
-## Coordination with Skill deactivation guards
+## Coordination With Skills
 
-In `edge_agent`, the `cap_lua_run` Skill has a deactivation guard: if Lua async jobs are still running, `deactivate_skill` is rejected with a structured reason (prompting you to stop jobs first via `lua_stop_async_job` or `lua_stop_all_async_jobs`).
-
-That guard is registered in `main.c`’s `app_main`, **after** `app_claw_start()` returns (`claw_skill_register_deactivate_guard("cap_lua_run", cap_lua_run_deactivate_guard)`), so the guard attaches only after the Skill subsystem is fully ready.
+The `cap_lua` Skill instructs the model to check and stop running Lua async jobs before deactivating the Skill. At runtime, `cap_lua_async_jobs_provider` also injects the current async-job summary into context so the model can avoid leaving long-lived jobs behind.
 
 <Aside type="tip">
   **Suggested workflow:** For peripheral-heavy scripts (continuous animation), submit with `lua_run_script_async` so the LLM can tell the user “started” immediately, then poll `lua_get_async_job` without stalling the Agent loop on a long script.
 </Aside>
 
-<LinkCard title="Lua extension modules" href="./lua-modules" description="How `lua_module_*` registers, how to build your own, and a deep dive on `display`" />
+<LinkCard title="Lua extension modules" href="./lua-modules" description="How `lua_module_*` / `lua_driver_*` registers, how to build your own, and a deep dive on `display`" />

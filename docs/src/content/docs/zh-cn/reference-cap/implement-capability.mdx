@@ -64,8 +64,8 @@ typedef struct {
     - src
         - cap_my_feature.c 具体实现
     - skills skills 目录，可选，见下文文档
-        - cap_my_feature.md Skill 使用文档（Markdown）
-        - skills_list.json Skill 元数据
+        - cap_my_feature
+            - SKILL.md Skill 元数据与正文
 </FileTree>
 
 `CMakeLists.txt` 最小示例：
@@ -262,26 +262,28 @@ claw_event_router_publish(&event);
 <FileTree>
 - cap_my_feature
     - **skills** skills 目录
-        - cap_my_feature.md    Skill 使用文档（Markdown）
-        - skills_list.json     Skill 元数据
+        - cap_my_feature
+            - SKILL.md         Skill 元数据与正文
 </FileTree>
 
-实际部署时，这些文件需拷贝到 FATFS 的 Skills 根目录（默认 `/fatfs/skills/`）下。
+构建时 `components/common/skill_builder` 会把这些文件同步到 FATFS 的 Skills 根目录（默认 `/fatfs/skills/`）下。
 
-### `skills_list.json` 格式
+### `SKILL.md` frontmatter 格式
 
-```jsonc
+````md
+---
 {
-  "skills": [
-    {
-      "id": "my_feature",           // Skill 唯一标识，全局不重复
-      "file": "cap_my_feature.md",  // .md 文件名（相对于 skills 根目录）
-      "summary": "一句话描述这个 Skill 的用途，LLM 未激活时看到的摘要",
-      "cap_groups": ["cap_my_feature"]  // 激活时同步开放的 Capability Group
-    }
-  ]
+  "name": "cap_my_feature",
+  "description": "一句话描述这个 Skill 的用途，LLM 未激活时看到的摘要",
+  "metadata": {
+    "cap_groups": ["cap_my_feature"],
+    "manage_mode": "readonly"
+  }
 }
-```
+---
+
+# cap_my_feature
+````
 
 激活 Skill 时，`cap_skill` 会将列表中所有 Group 加入当前 session 的 LLM 工具可见白名单。一个 Skill 可以绑定多个 Group，例如一个「文件编辑」Skill 同时开放 `cap_files` 和 `cap_lua`。
 
@@ -304,8 +306,8 @@ claw_event_router_publish(&event);
 | 管理 core 运行时状态 | 调用 `claw_skill_*` / `claw_cap_*` | `cap_skill` |
 
 <Aside type="caution">
-  **内存安全注意事项：**  
-  - `execute` 中分配的临时内存必须在函数返回前释放  
-  - `output` 缓冲区大小由框架分配，通常为 4096–8192 字节，不要假设更大的空间  
+  **内存安全注意事项：**
+  - `execute` 中分配的临时内存必须在函数返回前释放
+  - `output` 缓冲区大小由框架分配，通常为 4096–8192 字节，不要假设更大的空间
   - 如需输出大量文本，考虑分段或返回文件路径让 LLM 进一步查询
 </Aside>

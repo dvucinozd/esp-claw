@@ -27,10 +27,10 @@ Core 是 ESP-Claw Agent 运行核心。Core 负责维持「大语言模型循环
 
 Capability 负责提供和处理每个「能力」。在 ESP-Claw 体系中，Capability 可以产生 Event 和接收 Action，例如：
 - **产生 Event**:
-  - `cap_im_*` IM 类型的 Capability 收到消息后，会构造 Event 并传递给 `claw_event_router`。
+  - `cap_im_platform` 中的 IM Gateway 收到消息后，会构造 Event 并传递给 `claw_event_router`。
   - 特定外设在触发中断等事件时，会构造 Event 并传递给 `claw_event_router`。
 - **接收 Action**:
-  - `claw_event_router` 将 IM 消息发送任务传递给 `cap_im_*` 执行实际发送动作。
+  - `claw_event_router` 将 IM 消息发送任务传递给 `cap_im_platform` 实现的各平台 Group 执行实际发送动作。
   - Core 调用某个 Capability 提供的工具。
 
 <LinkCard href="@lang/reference-cap/" title="Capability" description="查看 capability 总览" />

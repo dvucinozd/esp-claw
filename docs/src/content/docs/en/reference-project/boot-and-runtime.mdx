@@ -76,7 +76,7 @@ This walkthrough uses sample app `application/edge_agent`, covering entry <LinkT
 
     - **cap_files**: file root `/fatfs`.
     - **cap_lua**: Lua root `/fatfs/scripts/`.
-    - **cap_im_qq / feishu / tg / wechat**: when credentials exist, apply App ID / Secret / Token and inbox path (`/fatfs/inbox/`) plus max attachment size.
+    - **cap_im_platform**: when IM credentials exist, apply QQ / Feishu / Telegram / WeChat App ID, Secret, or Token fields, then configure the shared inbox path (`/fatfs/inbox/`) plus max attachment size. The component registers the per-platform groups (`cap_im_qq`, `cap_im_feishu`, `cap_im_tg`, `cap_im_wechat`).
     - **cap_web_search**: store Brave / Tavily keys when non-empty.
     - **cap_router_mgr**: register Event Router console commands (`event_router`).
     - **cap_system**: register the system information capability group (memory, CPU, Wi-Fi, IP, and restart action).
@@ -120,8 +120,9 @@ This walkthrough uses sample app `application/edge_agent`, covering entry <LinkT
     - soul.md persona
     - identity.md identity
   - skills
-    - skills_list.json Skills manifest
-    - ... Skill files
+    - skill_id
+      - SKILL.md Skill metadata and body
+      - scripts/ Skill-bundled scripts (optional)
   - scripts
     - ... Lua scripts
   - router_rules

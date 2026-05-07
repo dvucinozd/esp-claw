@@ -31,7 +31,7 @@ import { Aside } from '@astrojs/starlight/components';
 
 ```d2
 user: "用户"
-cap_im: "cap_im_*"
+cap_im: "cap_im_platform"
 fatfs: "FATFS"
 router: "Event Router"
 inspect: "inspect_image\n(cap_llm_inspect)"
@@ -119,7 +119,7 @@ if (err != ESP_OK) {
 
 3. **无状态**：`cap_llm_inspect` 不持有任何状态，每次调用都是独立的推理任务
 
-4. **关注点分离**：图像下载由 `cap_im_tg` 负责，路径管理由 `cap_files` 负责，分析逻辑集中在 `cap_llm_inspect`
+4. **关注点分离**：IM 附件下载由 `cap_im_platform` 负责，路径管理由 `cap_files` 负责，分析逻辑集中在 `cap_llm_inspect`
 
 ## 扩展思路
 
@@ -130,6 +130,6 @@ if (err != ESP_OK) {
 - `classify_image`：使用专用 system prompt 对图像分类
 
 <Aside type="tip">
-  **何时使用嵌套 LLM vs. 直接处理？**  
+  **何时使用嵌套 LLM vs. 直接处理？**
   若任务本身需要语义理解（图像内容描述、自然语言判断），嵌套 LLM 是最简洁的方案。若任务是确定性的（文件操作、数值计算），应避免嵌套 LLM 以降低延迟和成本。
 </Aside>

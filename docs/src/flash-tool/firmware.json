@@ -4,7 +4,9 @@
       "esp32_p4_function_ev": {
         "features": [],
         "description": "",
-        "merged_binary": "/merged_binary/esp32_p4_function_ev__rev1.bin",
+        "merged_binary": {
+          "JTAG": "/merged_binary/esp32_p4_function_ev__rev1__jtag.bin"
+        },
         "min_flash_size": 16,
         "min_psram_size": 8,
         "nvs_info": {
@@ -19,7 +21,9 @@
       "esp32_p4x_function_ev": {
         "features": [],
         "description": "",
-        "merged_binary": "/merged_binary/esp32_p4x_function_ev__rev3.bin",
+        "merged_binary": {
+          "JTAG": "/merged_binary/esp32_p4x_function_ev__rev3__jtag.bin"
+        },
         "min_flash_size": 16,
         "min_psram_size": 8,
         "nvs_info": {
@@ -34,7 +38,9 @@
       "dfrobot_k10": {
         "features": [],
         "description": "",
-        "merged_binary": "/merged_binary/dfrobot_k10.bin",
+        "merged_binary": {
+          "JTAG": "/merged_binary/dfrobot_k10__jtag.bin"
+        },
         "min_flash_size": 16,
         "min_psram_size": 8,
         "nvs_info": {
@@ -47,7 +53,9 @@
       "esp_box_3": {
         "features": [],
         "description": "",
-        "merged_binary": "/merged_binary/esp_box_3.bin",
+        "merged_binary": {
+          "JTAG": "/merged_binary/esp_box_3__jtag.bin"
+        },
         "min_flash_size": 8,
         "min_psram_size": 8,
         "nvs_info": {
@@ -58,7 +66,9 @@
       "esp_vocat_board_v1_2": {
         "features": [],
         "description": "",
-        "merged_binary": "/merged_binary/esp_vocat_board_v1_2.bin",
+        "merged_binary": {
+          "JTAG": "/merged_binary/esp_vocat_board_v1_2__jtag.bin"
+        },
         "min_flash_size": 16,
         "min_psram_size": 8,
         "nvs_info": {
@@ -69,7 +79,10 @@
       "esp32_S3_DevKitC_1": {
         "features": [],
         "description": "",
-        "merged_binary": "/merged_binary/esp32_S3_DevKitC_1.bin",
+        "merged_binary": {
+          "UART": "/merged_binary/esp32_S3_DevKitC_1__uart.bin",
+          "JTAG": "/merged_binary/esp32_S3_DevKitC_1__jtag.bin"
+        },
         "min_flash_size": 8,
         "min_psram_size": 8,
         "nvs_info": {
@@ -80,7 +93,10 @@
       "esp32_S3_DevKitC_1_breadboard": {
         "features": [],
         "description": "",
-        "merged_binary": "/merged_binary/esp32_S3_DevKitC_1_breadboard.bin",
+        "merged_binary": {
+          "UART": "/merged_binary/esp32_S3_DevKitC_1_breadboard__uart.bin",
+          "JTAG": "/merged_binary/esp32_S3_DevKitC_1_breadboard__jtag.bin"
+        },
         "min_flash_size": 8,
         "min_psram_size": 8,
         "nvs_info": {
@@ -93,7 +109,9 @@
       "lilygo_t_display_s3": {
         "features": [],
         "description": "",
-        "merged_binary": "/merged_binary/lilygo_t_display_s3.bin",
+        "merged_binary": {
+          "JTAG": "/merged_binary/lilygo_t_display_s3__jtag.bin"
+        },
         "min_flash_size": 16,
         "min_psram_size": 8,
         "nvs_info": {
@@ -106,7 +124,9 @@
       "m5stack_cores3": {
         "features": [],
         "description": "",
-        "merged_binary": "/merged_binary/m5stack_cores3.bin",
+        "merged_binary": {
+          "JTAG": "/merged_binary/m5stack_cores3__jtag.bin"
+        },
         "min_flash_size": 16,
         "min_psram_size": 8,
         "nvs_info": {
@@ -117,7 +137,9 @@
       "m5stack_sticks3": {
         "features": [],
         "description": "",
-        "merged_binary": "/merged_binary/m5stack_sticks3.bin",
+        "merged_binary": {
+          "JTAG": "/merged_binary/m5stack_sticks3__jtag.bin"
+        },
         "min_flash_size": 8,
         "min_psram_size": 8,
         "nvs_info": {

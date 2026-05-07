@@ -24,7 +24,7 @@ Descriptors are grouped into **capability groups** (`claw_cap_group_t`)—the sm
 
 | Family | Components | Notes |
 |--------|------------|-------|
-| **IM ingress** | `cap_im_*` | Chat platforms as both event sources and send helpers |
+| **IM ingress** | `cap_im_platform` | Unified component for Feishu, QQ, Telegram, and WeChat; registers per-platform groups such as `cap_im_tg` |
 | **Filesystem** | `cap_files` | Managed FATFS read/write, edit, copy, move, delete, and listing |
 | **Lua** | `cap_lua` | Author, sync/async run, and track Lua jobs |
 | **Skill admin** | `cap_skill` | Register/unregister/activate/deactivate Skills (core as tools) |
@@ -53,7 +53,7 @@ esp_err_t cap_files_register_group(void)
 }
 ```
 
-`claw_cap_register_group` enforces unique group ids, runs descriptor `init` hooks, then finishes registration. `claw_cap_start_group` later invokes `start` (e.g. launching the Telegram poll task).
+`claw_cap_register_group` enforces unique group ids, runs descriptor `init` hooks, then finishes registration. `claw_cap_start_group` later invokes `start` (e.g. launching the Telegram poll task from the `cap_im_platform` component).
 
 ## LLM visibility
 
@@ -87,12 +87,12 @@ Three primary entry points:
 
 <CardGrid>
   <LinkCard title="How to implement a capability" href="./implement-capability" description="Authoring a `cap_*` component end-to-end" />
-  <LinkCard title="cap_im_tg" href="./cap-im-tg" description="IM reference: event source + callable sends" />
+  <LinkCard title="cap_im_platform" href="./cap-im-platform" description="Unified IM reference: Feishu, QQ, Telegram, and WeChat" />
   <LinkCard title="cap_skill" href="./cap-skill" description="Core-surface reference: `claw_skill` as tools" />
   <LinkCard title="cap_llm_inspect" href="./cap-llm-inspect" description="LLM-interaction reference: nested inference" />
   <LinkCard title="cap_files" href="./cap-files" description="Filesystem reference: managed-tree read/write, edit, copy, move, and delete" />
   <LinkCard title="cap_system" href="./cap-system" description="System-state reference: inspect runtime status and support safe restart" />
   <LinkCard title="cap_scheduler" href="./cap-scheduler" description="Scheduling reference: time-based event triggering and periodic tasks" />
   <LinkCard title="cap_lua and Lua overview" href="./cap-lua" description="Lua tooling plus where scripts fit in the stack" />
-  <LinkCard title="Lua extension modules" href="./lua-modules" description="Registering `lua_module_*`, custom modules, `display` deep dive" />
+  <LinkCard title="Lua extension modules" href="./lua-modules" description="Registering `lua_module_*` / `lua_driver_*`, custom modules, `display` deep dive" />
 </CardGrid>

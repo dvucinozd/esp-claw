@@ -2,14 +2,18 @@ import { connect, connectWithPort, type ESPLoader, type Logger } from "tasmota-w
 
 const FLASH_UART_BAUD_FAST = 921600; // UART speed during stub flash
 const FLASH_UART_BAUD_ROM = 115200; // ROM / console default
+const ESP_USB_JTAG_VID = 0x303a;
+const ESP_USB_JTAG_PID = 0x1001;
 
 const WIFI_STATUS_PROBE_ATTEMPTS = 3;
 const WIFI_STATUS_PROBE_WAIT_MS = 1000;
 const WIFI_STATUS_PROBE_RETRY_GAP_MS = 3000;
 
+type FirmwareBinaryLinks = Record<string, string>;
+
 type FirmwareRecord = {
   description?: string;
-  merged_binary: string;
+  merged_binary: FirmwareBinaryLinks;
   min_flash_size?: number;
   min_psram_size?: number;
 };
@@ -31,8 +35,10 @@ type Strings = {
   chooseChipLabel: string;
   chooseBrandLabel: string;
   chooseBoardLabel: string;
+  chooseConsoleOutputLabel: string;
   chooseChipPlaceholder: string;
   chooseBrandPlaceholder: string;
+  chooseConsoleOutputPlaceholder: string;
   boardAutoHint: string;
   boardManualHint: string;
   selectedBoardLabel: string;
@@ -48,6 +54,7 @@ type Strings = {
   flashBtn: string;
   flashBtnDisabledNoDevice: string;
   flashBtnDisabledNoFirmware: string;
+  flashBtnDisabledNoConsoleOutput: string;
   flashBtnDisabledNoMatch: string;
   actionReadyHint: string;
   noFirmwareTitle: string;
@@ -129,6 +136,8 @@ type WifiStatus = {
   ip: string | null;
 };
 
+type DetectedConsoleOutput = "UART" | "JTAG" | null;
+
 type Waiter<T> = {
   resolve: (value: T) => void;
   reject: (reason?: unknown) => void;
@@ -166,6 +175,7 @@ const els = {
   chipSelect: must<HTMLSelectElement>("chip-select"),
   brandSelect: must<HTMLSelectElement>("brand-select"),
   boardSelect: must<HTMLSelectElement>("board-select"),
+  consoleOutputSelect: must<HTMLSelectElement>("console-output-select"),
   selectedBoardName: must("selected-board-name"),
   selectedBoardDesc: must("selected-board-desc"),
   selectedBoardMeta: must("selected-board-meta"),
@@ -247,7 +257,9 @@ const state = {
   selectedChip: (chipKeys[0] ?? null) as string | null,
   selectedBrand: null as string | null,
   selectedBoardId: null as string | null,
+  selectedConsoleOutput: null as string | null,
   visibleBoards: [] as VisibleBoard[],
+  detectedConsoleOutput: null as DetectedConsoleOutput,
   readyIp: null as string | null,
   progressLines: [] as string[],
   consoleText: "",
@@ -304,6 +316,13 @@ async function init() {
   });
   els.boardSelect.addEventListener("change", () => {
     state.selectedBoardId = els.boardSelect.value || null;
+    normalizeConsoleOutputSelection();
+    renderConsoleOutputOptions();
+    renderSelectedBoard();
+    renderActionState();
+  });
+  els.consoleOutputSelect.addEventListener("change", () => {
+    state.selectedConsoleOutput = els.consoleOutputSelect.value || null;
     renderSelectedBoard();
     renderActionState();
   });
@@ -491,6 +510,8 @@ function refreshBoards() {
     state.selectedBoardId = null;
   }
   renderBoardOptions();
+  normalizeConsoleOutputSelection();
+  renderConsoleOutputOptions();
   renderSelectedBoard();
   renderNoFirmwareState();
   renderActionState();
@@ -508,6 +529,14 @@ function normalizeSelectionState() {
   const brandKeys = getBrandKeys(state.selectedChip);
   if (!brandKeys.includes(state.selectedBrand ?? "")) {
     state.selectedBrand = brandKeys[0] ?? null;
+  }
+}
+
+function normalizeConsoleOutputSelection() {
+  const selected = getSelectedFirmware();
+  const consoleOutputs = getVisibleConsoleOutputKeys(selected?.firmware ?? null);
+  if (!consoleOutputs.includes(state.selectedConsoleOutput ?? "")) {
+    state.selectedConsoleOutput = consoleOutputs[0] ?? null;
   }
 }
 
@@ -598,6 +627,43 @@ function isCompatibleWithCurrentDevice(chipKey: string, firmware: FirmwareRecord
   return true;
 }
 
+function getVisibleConsoleOutputKeys(firmware: FirmwareRecord | null) {
+  if (!firmware) {
+    return [];
+  }
+
+  return Object.keys(firmware.merged_binary)
+    .filter((consoleOutput) => isConsoleOutputVisibleForCurrentDevice(consoleOutput))
+    .sort(compareConsoleOutputKey);
+}
+
+function isConsoleOutputVisibleForCurrentDevice(consoleOutput: string) {
+  if (state.detectedConsoleOutput === "JTAG" && consoleOutput === "UART") {
+    return false;
+  }
+  if (state.detectedConsoleOutput === "UART" && consoleOutput === "JTAG") {
+    return false;
+  }
+  return true;
+}
+
+function compareConsoleOutputKey(a: string, b: string) {
+  return consoleOutputSortWeight(a) - consoleOutputSortWeight(b) || a.localeCompare(b);
+}
+
+function consoleOutputSortWeight(consoleOutput: string) {
+  if (consoleOutput === "UART") {
+    return 0;
+  }
+  if (consoleOutput === "JTAG") {
+    return 1;
+  }
+  if (consoleOutput === "unknown") {
+    return 2;
+  }
+  return 3;
+}
+
 function isChipKeyCompatibleWithCurrentDevice(chipKey: string) {
   if (!state.device.chipKey) {
     return true;
@@ -644,6 +710,28 @@ function renderBoardOptions() {
   els.boardSelect.disabled = state.visibleBoards.length === 0;
 }
 
+function renderConsoleOutputOptions() {
+  els.consoleOutputSelect.innerHTML = "";
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = s.chooseConsoleOutputPlaceholder;
+  placeholder.selected = !state.selectedConsoleOutput;
+  els.consoleOutputSelect.appendChild(placeholder);
+
+  const selected = getSelectedFirmware();
+  const consoleOutputs = getVisibleConsoleOutputKeys(selected?.firmware ?? null);
+  for (const consoleOutput of consoleOutputs) {
+    const option = document.createElement("option");
+    option.value = consoleOutput;
+    option.textContent = consoleOutputLabel(consoleOutput);
+    option.selected = option.value === state.selectedConsoleOutput;
+    els.consoleOutputSelect.appendChild(option);
+  }
+
+  els.consoleOutputSelect.disabled = !selected || consoleOutputs.length === 0;
+}
+
 function renderSelectedBoard() {
   const selected = getSelectedFirmware();
   if (!selected) {
@@ -657,6 +745,7 @@ function renderSelectedBoard() {
   }
 
   els.boardSelect.value = state.selectedBoardId ?? "";
+  els.consoleOutputSelect.value = state.selectedConsoleOutput ?? "";
   els.selectedBoardSummary.hidden = false;
   els.selectedBoardName.textContent = selected.boardKey;
   const description = selected.firmware.description?.trim() || "";
@@ -670,7 +759,7 @@ function renderSelectedBoard() {
   els.selectedBoardDesc.innerHTML = description
     ? `<strong>${escapeHtml(s.firmwareDescriptionLabel)}:</strong> ${escapeHtml(description)}`
     : "";
-  updateDownloadButton(selected.firmware);
+  updateDownloadButton(getSelectedMergedBinary(selected.firmware));
 }
 
 function renderNoFirmwareState() {
@@ -686,12 +775,16 @@ function renderNoFirmwareState() {
 
 function renderActionState() {
   const selected = getSelectedFirmware();
+  const selectedBinary = getSelectedMergedBinary(selected?.firmware ?? null);
   let hint = s.actionReadyHint;
   let flashDisabled = false;
 
   if (!selected) {
     flashDisabled = true;
     hint = state.device.chipKey ? s.flashBtnDisabledNoFirmware : s.flashBtnDisabledNoDevice;
+  } else if (!selectedBinary) {
+    flashDisabled = true;
+    hint = s.flashBtnDisabledNoConsoleOutput;
   } else if (!state.device.chipKey) {
     flashDisabled = true;
     hint = s.flashBtnDisabledNoDevice;
@@ -795,6 +888,7 @@ async function connectDevice() {
     state.loader = activeLoader;
     connectingLoader = null;
     state.serial = "connected";
+    state.detectedConsoleOutput = detectConsoleOutputFromLoader(activeLoader);
     state.device = {
       chipName: activeLoader.chipName,
       chipKey: normalizeChipKey(activeLoader.chipName),
@@ -846,6 +940,7 @@ async function disconnectDevice(options?: { silent?: boolean }) {
     flashSizeMb: null,
     psramSizeMb: null,
   };
+  state.detectedConsoleOutput = null;
   state.serial = "idle";
   renderConnectionState();
   refreshBoards();
@@ -870,7 +965,12 @@ async function disconnectDevice(options?: { silent?: boolean }) {
 
 async function flashSelectedFirmware() {
   const selected = getSelectedFirmware();
+  const selectedBinary = getSelectedMergedBinary(selected?.firmware ?? null);
   if (!selected) {
+    return;
+  }
+  if (!selectedBinary) {
+    renderActionState();
     return;
   }
   if (!state.loader || !state.device.chipKey) {
@@ -902,7 +1002,7 @@ async function flashSelectedFirmware() {
     state.flash = "downloading";
     updateConsoleTabState();
     updateModalProgress(s.downloadingFirmware, 0);
-    const binary = await downloadBinary(selected.firmware.merged_binary, (received, total) => {
+    const binary = await downloadBinary(selectedBinary, (received, total) => {
       const pct = total > 0 ? Math.round((received / total) * 100) : 0;
       updateModalProgress(s.downloadingFirmware, pct);
     });
@@ -1009,6 +1109,7 @@ async function reconnectDeviceAfterReset() {
     copyLoaderMetadata(state.loader, nextLoader);
     nextLoader.setConsoleMode(true);
     state.loader = nextLoader;
+    state.detectedConsoleOutput = detectConsoleOutputFromLoader(nextLoader);
 
     els.modalReconnectStatus.textContent = s.postFlashReconnectSuccess;
     renderReconnectPrompt(false);
@@ -1450,8 +1551,16 @@ function getSelectedFirmware() {
   ) ?? null;
 }
 
-function updateDownloadButton(firmware: FirmwareRecord | null) {
-  if (!firmware) {
+function getSelectedMergedBinary(firmware: FirmwareRecord | null) {
+  const consoleOutput = state.selectedConsoleOutput;
+  if (!firmware || !consoleOutput) {
+    return null;
+  }
+  return firmware.merged_binary[consoleOutput] ?? null;
+}
+
+function updateDownloadButton(binaryLink: string | null) {
+  if (!binaryLink) {
     els.downloadBtn.classList.add("disabled");
     els.downloadBtn.setAttribute("aria-disabled", "true");
     els.downloadBtn.href = "#";
@@ -1461,8 +1570,8 @@ function updateDownloadButton(firmware: FirmwareRecord | null) {
 
   els.downloadBtn.classList.remove("disabled");
   els.downloadBtn.setAttribute("aria-disabled", "false");
-  els.downloadBtn.href = firmware.merged_binary;
-  els.downloadBtn.download = firmware.merged_binary.split("/").pop() || "firmware.bin";
+  els.downloadBtn.href = binaryLink;
+  els.downloadBtn.download = binaryLink.split("/").pop() || "firmware.bin";
 }
 
 function currentSelectionStillVisible() {
@@ -1473,6 +1582,38 @@ function currentSelectionStillVisible() {
     ({ chipKey, brandKey, boardKey }) =>
       makeBoardId(chipKey, brandKey, boardKey) === state.selectedBoardId,
   );
+}
+
+function consoleOutputLabel(consoleOutput: string) {
+  if (consoleOutput === "unknown") {
+    return "unknown";
+  }
+  return consoleOutput;
+}
+
+function detectConsoleOutputFromLoader(loader: ESPLoader): DetectedConsoleOutput {
+  const info = getPortInfo(loader);
+  if (info?.usbVendorId === ESP_USB_JTAG_VID && info?.usbProductId === ESP_USB_JTAG_PID) {
+    return "JTAG";
+  }
+  return "UART";
+}
+
+function getPortInfo(loader: ESPLoader): SerialPortInfo | null {
+  const port = (loader as ESPLoader & {
+    port?: {
+      getInfo?: () => SerialPortInfo;
+    };
+  }).port;
+  if (!port?.getInfo) {
+    return null;
+  }
+
+  try {
+    return port.getInfo();
+  } catch {
+    return null;
+  }
 }
 
 // ── Utility ──────────────────────────────────────────────────────────────────

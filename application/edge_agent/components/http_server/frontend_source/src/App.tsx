@@ -32,6 +32,10 @@ const SetupWizardPage = lazy(() =>
 );
 
 type RouteId = TabId | 'start';
+type RestartRequestOptions = {
+  targetTab?: TabId;
+  reloadOnSuccess?: boolean;
+};
 
 function readTabFromHash(): RouteId {
   const hash = window.location.hash.replace(/^#\/?/, '');
@@ -51,6 +55,7 @@ const App: Component = () => {
   let pollController: AbortController | null = null;
   let restartStartedAt = 0;
   let restartTarget: TabId | null = null;
+  let restartReloadOnSuccess = false;
   let restartActive = false;
 
   const clearRestartFlow = () => {
@@ -61,6 +66,7 @@ const App: Component = () => {
     }
     pollController?.abort();
     pollController = null;
+    restartReloadOnSuccess = false;
   };
 
   const closeRestartOverlay = () => {
@@ -138,6 +144,10 @@ const App: Component = () => {
       pollController = new AbortController();
       try {
         await fetchStatus(pollController.signal);
+        if (restartReloadOnSuccess) {
+          window.location.reload();
+          return;
+        }
         await reloadStatus();
         closeRestartOverlay();
         if (restartTarget) {
@@ -158,10 +168,11 @@ const App: Component = () => {
     }, 2000);
   };
 
-  const handleRestartRequest = async (targetTab?: TabId) => {
+  const handleRestartRequest = async (options?: RestartRequestOptions) => {
     clearRestartFlow();
     restartActive = true;
-    restartTarget = targetTab ?? null;
+    restartTarget = options?.targetTab ?? null;
+    restartReloadOnSuccess = options?.reloadOnSuccess ?? false;
     restartStartedAt = Date.now();
     const deadlineAt = restartStartedAt + 30000;
     setRestartOverlay({
@@ -216,7 +227,7 @@ const App: Component = () => {
                 <StatusPage onRestartRequest={() => void handleRestartRequest()} />
               </Show>
               <Show when={currentTab() === 'basic'}>
-                <BasicPage />
+                <BasicPage onRestartRequest={() => void handleRestartRequest({ reloadOnSuccess: true })} />
               </Show>
               <Show when={currentTab() === 'llm'}>
                 <LlmPage />
@@ -225,7 +236,7 @@ const App: Component = () => {
                 <ImPage />
               </Show>
               <Show when={currentTab() === 'search'}>
-                <SearchPage />
+                <SearchPage onRestartRequest={() => void handleRestartRequest({ reloadOnSuccess: true })} />
               </Show>
               <Show when={currentTab() === 'memory'}>
                 <MemoryPage />
@@ -234,10 +245,10 @@ const App: Component = () => {
                 <WebImPage />
               </Show>
               <Show when={currentTab() === 'capabilities'}>
-                <CapabilitiesPage />
+                <CapabilitiesPage onRestartRequest={() => void handleRestartRequest({ reloadOnSuccess: true })} />
               </Show>
               <Show when={currentTab() === 'skills'}>
-                <SkillsPage />
+                <SkillsPage onRestartRequest={() => void handleRestartRequest({ reloadOnSuccess: true })} />
               </Show>
               <Show when={currentTab() === 'files'}>
                 <FilesPage />
@@ -247,7 +258,7 @@ const App: Component = () => {
         }
       >
         <Suspense fallback={<div class="p-6 text-[var(--color-text-muted)]">{t('statusLoading')}</div>}>
-          <SetupWizardPage onRestartRequest={(targetTab) => void handleRestartRequest(targetTab)} />
+          <SetupWizardPage onRestartRequest={(targetTab) => void handleRestartRequest({ targetTab })} />
         </Suspense>
       </Show>
       <RestartOverlay state={restartOverlay()} onClose={closeRestartOverlay} />

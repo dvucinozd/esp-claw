@@ -79,10 +79,12 @@ build_application_edge_agent:
       - EXAMPLE_BOARD: esp32_S3_DevKitC_1
         EXAMPLE_TARGET: esp32s3
         EXAMPLE_BOARD_BRAND: "espressif"
+        EXAMPLE_CONFIG: "sdkconfig.console.jtag=jtag" # use this to build the binary with JTAG console output
 
       - EXAMPLE_BOARD: esp32_S3_DevKitC_1_breadboard
         EXAMPLE_TARGET: esp32s3
         EXAMPLE_BOARD_BRAND: "espressif"
+        EXAMPLE_CONFIG: "sdkconfig.console.jtag=jtag"
 
       - EXAMPLE_BOARD: esp32_p4_function_ev
         EXAMPLE_TARGET: esp32p4

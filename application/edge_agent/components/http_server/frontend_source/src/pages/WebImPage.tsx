@@ -51,6 +51,7 @@ export const WebImPage: Component = () => {
   let fileRef: HTMLInputElement | undefined;
   let ws: WebSocket | null = null;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
   const clearReconnect = () => {
     if (reconnectTimer !== null) {
@@ -59,8 +60,16 @@ export const WebImPage: Component = () => {
     }
   };
 
+  const clearHeartbeat = () => {
+    if (heartbeatTimer !== null) {
+      clearInterval(heartbeatTimer);
+      heartbeatTimer = null;
+    }
+  };
+
   const teardownWs = () => {
     clearReconnect();
+    clearHeartbeat();
     if (ws) {
       ws.onopen = null;
       ws.onclose = null;
@@ -90,12 +99,31 @@ export const WebImPage: Component = () => {
     ws = socket;
 
     socket.onopen = () => {
+      const hello = JSON.stringify({ type: 'hello', chat_id: chatId });
+
       setWsReady(true);
       clearReconnect();
+      try {
+        socket.send(hello);
+      } catch {
+        /* ignore */
+      }
+      clearHeartbeat();
+      heartbeatTimer = setInterval(() => {
+        if (socket.readyState !== WebSocket.OPEN) {
+          return;
+        }
+        try {
+          socket.send('{"type":"ping"}');
+        } catch {
+          /* ignore */
+        }
+      }, 15000);
     };
 
     socket.onclose = () => {
       setWsReady(false);
+      clearHeartbeat();
       scheduleReconnect();
     };
 

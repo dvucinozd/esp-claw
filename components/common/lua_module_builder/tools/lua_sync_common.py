@@ -78,7 +78,7 @@ def load_build_component_info(build_dir: Path) -> dict[str, dict]:
     return component_info
 
 
-def collect_build_component_sources(build_dir: Path, name_prefix: str | None = None) -> list[ComponentSource]:
+def collect_build_component_sources(build_dir: Path, name_prefix: str | tuple[str, ...] | None = None) -> list[ComponentSource]:
     component_info = load_build_component_info(build_dir)
     sources: list[ComponentSource] = []
 

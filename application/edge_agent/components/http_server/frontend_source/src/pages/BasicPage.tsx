@@ -8,6 +8,7 @@ import { CollapsibleConfigBlock, StaticConfigBlock } from '../components/ui/Conf
 import { TextInput } from '../components/ui/FormField';
 import { SavePanel } from '../components/ui/SavePanel';
 import { Banner } from '../components/ui/Banner';
+import { RestartConfirmModal } from '../components/system/RestartConfirmModal';
 import { pushToast } from '../state/toast';
 
 type BasicForm = {
@@ -16,7 +17,7 @@ type BasicForm = {
   time_timezone: string;
 };
 
-export const BasicPage: Component = () => {
+export const BasicPage: Component<{ onRestartRequest: () => void }> = (props) => {
   const tab = createConfigTab<BasicForm>({
     tab: 'basic',
     groups: ['wifi', 'time'],
@@ -32,6 +33,7 @@ export const BasicPage: Component = () => {
     }),
   });
   const [validationError, setValidationError] = createSignal<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = createSignal(false);
 
   createEffect(() => {
     void tab.form.wifi_ssid;
@@ -58,6 +60,7 @@ export const BasicPage: Component = () => {
     }
 
     await tab.save();
+    setConfirmOpen(true);
   };
 
   const timezoneHint = () =>
@@ -129,6 +132,15 @@ export const BasicPage: Component = () => {
         onSave={() => handleSave().catch(() => undefined)}
         onDiscard={tab.discard}
         note={t('restartHint') as string}
+      />
+      <RestartConfirmModal
+        open={confirmOpen()}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          props.onRestartRequest();
+        }}
+        subtitle={t('restartHint') as string}
       />
     </TabShell>
   );

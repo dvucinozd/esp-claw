@@ -169,56 +169,61 @@ menu "App Claw Config"
 
     menu "App Claw Lua Modules"
 
-        config APP_CLAW_LUA_MODULE_IMU
-            bool "Enable IMU Lua module"
-            default n
-            help
-                Enable the IMU Lua module and keep app_claw's direct dependency
-                on lua_module_imu when Lua capability is enabled.
+        comment "--- Hardware peripheral drivers (lua_driver) ---"
 
-        config APP_CLAW_LUA_MODULE_MAGNETOMETER
-            bool "Enable magnetometer Lua module"
-            default n
+        config APP_CLAW_LUA_DRIVER_ADC
+            bool "Enable ADC Lua driver"
+            default y
             help
-                Enable the magnetometer Lua module and keep app_claw's direct
-                dependency on lua_module_magnetometer when Lua capability is enabled.
+                Enable the ADC Lua driver and keep app_claw's direct dependency
+                on lua_driver_adc when Lua capability is enabled.
 
-        config APP_CLAW_LUA_MODULE_ENVIRONMENTAL_SENSOR
-            bool "Enable environmental sensor Lua module"
-            default n
+        config APP_CLAW_LUA_DRIVER_GPIO
+            bool "Enable GPIO Lua driver"
+            default y
             help
-                Enable the environmental sensor Lua module and keep app_claw's direct
-                dependency on lua_module_environmental_sensor when Lua capability is enabled.
+                Enable the GPIO Lua driver and keep app_claw's direct dependency
+                on lua_driver_gpio when Lua capability is enabled.
 
-        config APP_CLAW_LUA_MODULE_FUEL_GAUGE
-            bool "Enable Fuel Gauge Lua module"
-            default n
+        config APP_CLAW_LUA_DRIVER_I2C
+            bool "Enable I2C Lua driver"
+            default y
             help
-                Enable the Fuel Gauge Lua module and keep app_claw's direct dependency
-                on lua_module_fuel_gauge when Lua capability is enabled.
+                Enable the I2C Lua driver and keep app_claw's direct dependency
+                on lua_driver_i2c when Lua capability is enabled.
 
-        config APP_CLAW_LUA_MODULE_TOUCH
-            bool "Enable touch Lua module"
+        config APP_CLAW_LUA_DRIVER_MCPWM
+            bool "Enable MCPWM Lua driver"
+            default y
+            help
+                Enable the MCPWM Lua driver and keep app_claw's direct dependency
+                on lua_driver_mcpwm when Lua capability is enabled.
+
+        config APP_CLAW_LUA_DRIVER_TOUCH
+            bool "Enable touch Lua driver"
             default y if SOC_TOUCH_SENSOR_SUPPORTED
             default n
             help
-                Enable the touch Lua module and keep app_claw's direct dependency
-                on lua_module_touch when Lua capability is enabled.
+                Enable the touch Lua driver and keep app_claw's direct dependency
+                on lua_driver_touch when Lua capability is enabled.
                 Defaults to n on chips without touch sensor hardware support.
 
-        config APP_CLAW_LUA_MODULE_IR
-            bool "Enable IR Lua module"
-            default n
-            help
-                Enable the IR Lua module and keep app_claw's direct dependency
-                on lua_module_ir when Lua capability is enabled.
-
-        config APP_CLAW_LUA_MODULE_ADC
-            bool "Enable ADC Lua module"
+        config APP_CLAW_LUA_DRIVER_UART
+            bool "Enable UART Lua driver"
             default y
             help
-                Enable the ADC Lua module and keep app_claw's direct dependency
-                on lua_module_adc when Lua capability is enabled.
+                Enable the UART Lua driver and keep app_claw's direct dependency
+                on lua_driver_uart when Lua capability is enabled.
+
+        comment "--- Higher-level modules (lua_module) ---"
+
+        config APP_CLAW_LUA_MODULE_AUDIO
+            bool "Enable audio Lua module"
+            default y if ESP_BOARD_DEV_AUDIO_CODEC_SUPPORT
+            default n
+            help
+                Enable the audio Lua module and keep app_claw's direct dependency
+                on lua_module_audio when Lua capability is enabled.
 
         config APP_CLAW_LUA_MODULE_BOARD_MANAGER
             bool "Enable board manager Lua module"
@@ -227,13 +232,6 @@ menu "App Claw Config"
                 Enable the board manager Lua module and keep app_claw's direct
                 dependency on lua_module_board_manager when Lua capability is enabled.
 
-        config APP_CLAW_LUA_MODULE_CAPABILITY
-            bool "Enable capability Lua module"
-            default y
-            help
-                Enable the capability Lua module and keep app_claw's direct
-                dependency on lua_module_call_capability when Lua capability is enabled.
-
         config APP_CLAW_LUA_MODULE_BUTTON
             bool "Enable button Lua module"
             default y
@@ -241,12 +239,20 @@ menu "App Claw Config"
                 Enable the button Lua module and keep app_claw's direct dependency
                 on lua_module_button when Lua capability is enabled.
 
-        config APP_CLAW_LUA_MODULE_KNOB
-            bool "Enable knob (rotary encoder) Lua module"
+        config APP_CLAW_LUA_MODULE_CAMERA
+            bool "Enable camera Lua module"
+            default y if ESP_BOARD_DEV_CAMERA_SUPPORT
             default n
             help
-                Enable the knob Lua module and keep app_claw's direct dependency
-                on lua_module_knob when Lua capability is enabled.
+                Enable the camera Lua module and keep app_claw's direct dependency
+                on lua_module_camera when Lua capability is enabled.
+
+        config APP_CLAW_LUA_MODULE_CAPABILITY
+            bool "Enable capability Lua module"
+            default y
+            help
+                Enable the capability Lua module and keep app_claw's direct
+                dependency on lua_module_call_capability when Lua capability is enabled.
 
         config APP_CLAW_LUA_MODULE_DELAY
             bool "Enable delay Lua module"
@@ -262,12 +268,12 @@ menu "App Claw Config"
                 Enable the display Lua module and keep app_claw's direct dependency
                 on lua_module_display when Lua capability is enabled.
 
-        config APP_CLAW_LUA_MODULE_LCD
-            bool "Enable LCD Lua module"
+        config APP_CLAW_LUA_MODULE_ENVIRONMENTAL_SENSOR
+            bool "Enable environmental sensor Lua module"
             default n
             help
-                Enable the LCD Lua module and keep app_claw's direct dependency
-                on lua_module_lcd when Lua capability is enabled.
+                Enable the environmental sensor Lua module and keep app_claw's direct
+                dependency on lua_module_environmental_sensor when Lua capability is enabled.
 
         config APP_CLAW_LUA_MODULE_ESP_HEAP
             bool "Enable esp_heap Lua module"
@@ -283,26 +289,48 @@ menu "App Claw Config"
                 Enable the event publisher Lua module and keep app_claw's direct
                 dependency on lua_module_event_publisher when Lua capability is enabled.
 
-        config APP_CLAW_LUA_MODULE_GPIO
-            bool "Enable GPIO Lua module"
-            default y
+        config APP_CLAW_LUA_MODULE_FUEL_GAUGE
+            bool "Enable Fuel Gauge Lua module"
+            default n
             help
-                Enable the GPIO Lua module and keep app_claw's direct dependency
-                on lua_module_gpio when Lua capability is enabled.
+                Enable the Fuel Gauge Lua module and keep app_claw's direct dependency
+                on lua_module_fuel_gauge when Lua capability is enabled.
 
-        config APP_CLAW_LUA_MODULE_I2C
-            bool "Enable I2C Lua module"
-            default y
+        config APP_CLAW_LUA_MODULE_IMU
+            bool "Enable IMU Lua module"
+            default n
             help
-                Enable the I2C Lua module and keep app_claw's direct dependency
-                on lua_module_i2c when Lua capability is enabled.
+                Enable the IMU Lua module and keep app_claw's direct dependency
+                on lua_module_imu when Lua capability is enabled.
 
-        config APP_CLAW_LUA_MODULE_SSD1306
-            bool "Enable SSD1306 Lua module"
-            default y
+        config APP_CLAW_LUA_MODULE_IR
+            bool "Enable IR Lua module"
+            default n
             help
-                Enable the SSD1306 Lua module and keep app_claw's direct
-                dependency on lua_module_ssd1306 when Lua capability is enabled.
+                Enable the IR Lua module and keep app_claw's direct dependency
+                on lua_module_ir when Lua capability is enabled.
+
+        config APP_CLAW_LUA_MODULE_KNOB
+            bool "Enable knob (rotary encoder) Lua module"
+            default n
+            help
+                Enable the knob Lua module and keep app_claw's direct dependency
+                on lua_module_knob when Lua capability is enabled.
+
+        config APP_CLAW_LUA_MODULE_LCD
+            bool "Enable LCD Lua module"
+            default n
+            help
+                Enable the LCD Lua module and keep app_claw's direct dependency
+                on lua_module_lcd when Lua capability is enabled.
+
+        config APP_CLAW_LUA_MODULE_LCD_TOUCH
+            bool "Enable LCD touch Lua module"
+            default y if ESP_BOARD_DEV_LCD_TOUCH_I2C_SUPPORT
+            default n
+            help
+                Enable the LCD touch Lua module and keep app_claw's direct dependency
+                on lua_module_lcd_touch when Lua capability is enabled.
 
         config APP_CLAW_LUA_MODULE_LED_STRIP
             bool "Enable LED strip Lua module"
@@ -311,12 +339,19 @@ menu "App Claw Config"
                 Enable the LED strip Lua module and keep app_claw's direct dependency
                 on lua_module_led_strip when Lua capability is enabled.
 
-        config APP_CLAW_LUA_MODULE_MCPWM
-            bool "Enable MCPWM Lua module"
+        config APP_CLAW_LUA_MODULE_MAGNETOMETER
+            bool "Enable magnetometer Lua module"
+            default n
+            help
+                Enable the magnetometer Lua module and keep app_claw's direct
+                dependency on lua_module_magnetometer when Lua capability is enabled.
+
+        config APP_CLAW_LUA_MODULE_SSD1306
+            bool "Enable SSD1306 Lua module"
             default y
             help
-                Enable the MCPWM Lua module and keep app_claw's direct dependency
-                on lua_module_mcpwm when Lua capability is enabled.
+                Enable the SSD1306 Lua module and keep app_claw's direct
+                dependency on lua_module_ssd1306 when Lua capability is enabled.
 
         config APP_CLAW_LUA_MODULE_STORAGE
             bool "Enable storage Lua module"
@@ -331,37 +366,6 @@ menu "App Claw Config"
             help
                 Enable the system Lua module and keep app_claw's direct dependency
                 on lua_module_system when Lua capability is enabled.
-
-        config APP_CLAW_LUA_MODULE_UART
-            bool "Enable UART Lua module"
-            default y
-            help
-                Enable the UART Lua module and keep app_claw's direct dependency
-                on lua_module_uart when Lua capability is enabled.
-
-        config APP_CLAW_LUA_MODULE_AUDIO
-            bool "Enable audio Lua module"
-            default y if ESP_BOARD_DEV_AUDIO_CODEC_SUPPORT
-            default n
-            help
-                Enable the audio Lua module and keep app_claw's direct dependency
-                on lua_module_audio when Lua capability is enabled.
-
-        config APP_CLAW_LUA_MODULE_LCD_TOUCH
-            bool "Enable LCD touch Lua module"
-            default y if ESP_BOARD_DEV_LCD_TOUCH_I2C_SUPPORT
-            default n
-            help
-                Enable the LCD touch Lua module and keep app_claw's direct dependency
-                on lua_module_lcd_touch when Lua capability is enabled.
-
-        config APP_CLAW_LUA_MODULE_CAMERA
-            bool "Enable camera Lua module"
-            default y if ESP_BOARD_DEV_CAMERA_SUPPORT
-            default n
-            help
-                Enable the camera Lua module and keep app_claw's direct dependency
-                on lua_module_camera when Lua capability is enabled.
 
     endmenu
 

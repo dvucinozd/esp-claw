@@ -20,10 +20,10 @@ This “thin `cap_*` over `claw_*`” pattern is common: frameworks implement be
 
 | Tool ID | Description |
 |---------|-------------|
-| `list_skill` | List every Skill declared in `skills_list.json` |
-| `register_skill` | Add a Skill to the catalog (`.md` must already exist on disk) |
-| `unregister_skill` | Remove a Skill from the catalog |
-| `activate_skill` | Activate for the current session and open bound `cap_groups` |
+| `list_skill` | List every Skill discovered from Markdown under the Skills root |
+| `register_skill` | Create one runtime-managed `skills/<skill_id>/SKILL.md` and reload the registry |
+| `unregister_skill` | Delete one runtime-managed Skill Markdown and reload the registry |
+| `activate_skill` | Activate for the current session and open bound `metadata.cap_groups` |
 | `deactivate_skill` | Deactivate a Skill (or `"all"` to clear) |
 
 Except `list_skill`, all are flagged `CLAW_CAP_FLAG_CALLABLE_BY_LLM`.
@@ -69,15 +69,14 @@ Registration enforces integrity:
 // 1. Path safety: no leading "/", no "..", no backslashes
 if (!cap_skill_path_is_valid(file_item->valuestring)) { ... }
 
-// 2. File must already exist under the managed skills tree
-// Path must live under /fatfs/skills/ and end with .md
-if (!cap_skill_file_exists(skill_path)) { ... return ESP_ERR_NOT_FOUND; }
+// 2. file must match <skill_id>/SKILL.md under /fatfs/skills/
+if (!cap_skill_path_is_valid(skill_id, file)) { ... return ESP_ERR_INVALID_ARG; }
 
 // 3. skill_id must be unique
 if (cap_skill_catalog_contains_id(skills, skill_id)) { ... return ESP_ERR_INVALID_ARG; }
 ```
 
-After editing `skills_list.json`, `claw_skill_reload_registry()` applies changes; failed reload rolls back to keep the catalog consistent.
+After creating or deleting `SKILL.md`, `claw_skill_reload_registry()` applies changes; failed reload rolls back to keep the catalog consistent.
 
 ### Session isolation
 
@@ -95,9 +94,9 @@ Tools return structured JSON the LLM can parse:
 {
   "action": "activate_skill",
   "session_id": "tg::-123456",
-  "skill_id": "cap_lua_run",
+  "skill_id": "cap_lua",
   "ok": true,
-  "active_skill_ids": ["cap_lua_run", "cap_files"]
+  "active_skill_ids": ["cap_lua", "cap_files"]
 }
 ```
 
@@ -108,7 +107,7 @@ When `deactivate_skill` is blocked by a guard, it also returns structured JSON (
   "ok": false,
   "error": "deactivate blocked by skill guard",
   "skill_id": "all",
-  "blocked_by": "cap_lua_run",
+  "blocked_by": "cap_lua",
   "reason": "1 Lua async job(s) still running..."
 }
 ```

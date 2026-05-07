@@ -1,6 +1,6 @@
 ---
 title: Skills Manager
-description: skills_list.json, Skills Markdown, per-session activation, and context injection.
+description: SKILL.md metadata, per-session activation, and context injection.
 ---
 
 import LinkToSource from '@/components/LinkToSource.astro';
@@ -10,7 +10,7 @@ Header: <LinkToSource relativePath="components/claw_modules/claw_skill/include/c
 
 `claw_skill` manages user-visible **Skills** in the model context:
 
-- On disk: a set of Skill files (several `.md`) plus a manifest (`skills_list.json`) describing ids, summaries, and which file backs each Skill.
+- On disk: a set of `skills/<skill_id>/SKILL.md` files whose JSON frontmatter describes the Skill id, summary, manage mode, and capability groups.
 - Per session: a set of “currently activated” Skill ids persisted under the session state directory.
 - After activation, the model sees fuller Skill docs and can use `cap_skill` tools to activate/deactivate Skills.
 
@@ -20,7 +20,7 @@ Header: <LinkToSource relativePath="components/claw_modules/claw_skill/include/c
 
 Main fields of `claw_skill_config_t`:
 
-- `skills_root_dir`: root for Skill files and `skills_list.json` (demo: `/fatfs/skills`).
+- `skills_root_dir`: root for the Skills tree (demo: `/fatfs/skills`).
 - `session_state_root_dir`: where per-session activation state files live (demo shares the same root as session history).
 - `max_file_bytes`: maximum bytes read from a single Skill document file (guards against huge files filling the context).
 
@@ -28,10 +28,10 @@ Main fields of `claw_skill_config_t`:
 
 `claw_skill` plugs into `claw_core` as two **context providers**:
 
-1. **`claw_skill_skills_list_provider`**: each request renders all Skills from `skills_list.json` (id, summary) into the system prompt so the model knows what Skills exist.
-2. **`claw_skill_active_skill_docs_provider`**: concatenates `.md` contents for Skills activated in the current session.
+1. **`claw_skill_skills_list_provider`**: each request renders `name` and `description` from every `SKILL.md` frontmatter into the system prompt so the model knows what Skills exist.
+2. **`claw_skill_active_skill_docs_provider`**: concatenates `SKILL.md` bodies for Skills activated in the current session.
 
-Activating a Skill therefore adds its `.md` to the next request; tool descriptions and behavioral contracts come from that document.
+Activating a Skill therefore adds its `SKILL.md` body to the next request; tool descriptions and behavioral contracts come from that document.
 
 ## Activation state
 
@@ -47,10 +47,10 @@ Activation is **isolated per session**:
 
 ## Where runtime Skills come from
 
-The `/fatfs/skills/skills_list.json` read at runtime is merged from:
+The `/fatfs/skills` tree read at runtime is merged from every build component's `skills/` subtree:
 
-1. **`application/edge_agent/main/skills/`**: app-bundled Skill files, synced into `fatfs_image/skills/` by `tools/cmake/skills_sync.cmake` during build before being packaged into firmware.
-2. **Component Skills**: each `cap_*` / `lua_module_*` component may ship a `skills/` subtree; `tools/sync_component_skills.py` merges them into `fatfs_image/skills/` at build time before packaging.
+1. **`application/edge_agent/main/skills/`**: app-bundled Skills laid out as `skills/<skill_id>/SKILL.md`, synced into `fatfs_image/skills/` at build time.
+2. **Component Skills**: each `cap_*` / `lua_module_*` / `lua_driver_*` component may ship `skills/<skill_id>/SKILL.md`; `components/common/skill_builder` syncs them into `fatfs_image/skills/` at build time before packaging.
 
 Note: files placed under `application/edge_agent/main/skills/` go through the build sync flow; directly editing same-named files under `fatfs_image/skills/` will be overwritten by the next build.
 

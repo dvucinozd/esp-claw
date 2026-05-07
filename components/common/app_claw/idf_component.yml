@@ -7,37 +7,17 @@ dependencies:
       - if: $CONFIG{APP_CLAW_CAP_FILES} == True
     path: ../../claw_capabilities/cap_files
 
-  cap_im_attachment:
+  cap_im_platform:
     rules:
       - if: >-
-          $CONFIG{APP_CLAW_CAP_IM_QQ} == True || $CONFIG{APP_CLAW_CAP_IM_FEISHU} == True ||
+          $CONFIG{APP_CLAW_CAP_IM_FEISHU} == True || $CONFIG{APP_CLAW_CAP_IM_QQ} == True ||
           $CONFIG{APP_CLAW_CAP_IM_TG} == True || $CONFIG{APP_CLAW_CAP_IM_WECHAT} == True
-    path: ../../claw_capabilities/cap_im_attachment
-
-  cap_im_feishu:
-    rules:
-      - if: $CONFIG{APP_CLAW_CAP_IM_FEISHU} == True
-    path: ../../claw_capabilities/cap_im_feishu
-
-  cap_im_qq:
-    rules:
-      - if: $CONFIG{APP_CLAW_CAP_IM_QQ} == True
-    path: ../../claw_capabilities/cap_im_qq
-
-  cap_im_tg:
-    rules:
-      - if: $CONFIG{APP_CLAW_CAP_IM_TG} == True
-    path: ../../claw_capabilities/cap_im_tg
+    path: ../../claw_capabilities/cap_im_platform
 
   cap_im_local:
     rules:
       - if: $CONFIG{APP_CLAW_CAP_IM_LOCAL} == True
     path: ../../claw_capabilities/cap_im_local
-
-  cap_im_wechat:
-    rules:
-      - if: $CONFIG{APP_CLAW_CAP_IM_WECHAT} == True
-    path: ../../claw_capabilities/cap_im_wechat
 
   cap_llm_inspect:
     rules:
@@ -121,6 +101,46 @@ dependencies:
       - if: $CONFIG{APP_CLAW_ENABLE_EMOTE} == True
     path: ../emote
 
+  # --- lua_driver (hardware peripheral drivers) ---
+
+  lua_driver_adc:
+    rules:
+      - if: $CONFIG{APP_CLAW_CAP_LUA} == True
+      - if: $CONFIG{APP_CLAW_LUA_DRIVER_ADC} == True
+    path: ../../lua_modules/lua_driver_adc
+
+  lua_driver_gpio:
+    rules:
+      - if: $CONFIG{APP_CLAW_CAP_LUA} == True
+      - if: $CONFIG{APP_CLAW_LUA_DRIVER_GPIO} == True
+    path: ../../lua_modules/lua_driver_gpio
+
+  lua_driver_i2c:
+    rules:
+      - if: $CONFIG{APP_CLAW_CAP_LUA} == True
+      - if: $CONFIG{APP_CLAW_LUA_DRIVER_I2C} == True
+    path: ../../lua_modules/lua_driver_i2c
+
+  lua_driver_mcpwm:
+    rules:
+      - if: $CONFIG{APP_CLAW_CAP_LUA} == True
+      - if: $CONFIG{APP_CLAW_LUA_DRIVER_MCPWM} == True
+    path: ../../lua_modules/lua_driver_mcpwm
+
+  lua_driver_touch:
+    rules:
+      - if: $CONFIG{APP_CLAW_CAP_LUA} == True
+      - if: $CONFIG{APP_CLAW_LUA_DRIVER_TOUCH} == True
+    path: ../../lua_modules/lua_driver_touch
+
+  lua_driver_uart:
+    rules:
+      - if: $CONFIG{APP_CLAW_CAP_LUA} == True
+      - if: $CONFIG{APP_CLAW_LUA_DRIVER_UART} == True
+    path: ../../lua_modules/lua_driver_uart
+
+  # --- lua_module (higher-level modules) ---
+
   lua_module_audio:
     rules:
       - if: $CONFIG{APP_CLAW_CAP_LUA} == True
@@ -134,65 +154,17 @@ dependencies:
       - if: $CONFIG{APP_CLAW_LUA_MODULE_BOARD_MANAGER} == True
     path: ../../lua_modules/lua_module_board_manager
 
-  lua_module_imu:
-    rules:
-      - if: $CONFIG{APP_CLAW_CAP_LUA} == True
-      - if: $CONFIG{APP_CLAW_LUA_MODULE_IMU} == True
-    path: ../../lua_modules/lua_module_imu
-
-  lua_module_magnetometer:
-    rules:
-      - if: $CONFIG{APP_CLAW_CAP_LUA} == True
-      - if: $CONFIG{APP_CLAW_LUA_MODULE_MAGNETOMETER} == True
-    path: ../../lua_modules/lua_module_magnetometer
-
-  lua_module_environmental_sensor:
-    rules:
-      - if: $CONFIG{APP_CLAW_CAP_LUA} == True
-      - if: $CONFIG{APP_CLAW_LUA_MODULE_ENVIRONMENTAL_SENSOR} == True
-    path: ../../lua_modules/lua_module_environmental_sensor
-
-  lua_module_fuel_gauge:
-    rules:
-      - if: $CONFIG{APP_CLAW_CAP_LUA} == True
-      - if: $CONFIG{APP_CLAW_LUA_MODULE_FUEL_GAUGE} == True
-    path: ../../lua_modules/lua_module_fuel_gauge
-
-  lua_module_touch:
-    rules:
-      - if: $CONFIG{APP_CLAW_CAP_LUA} == True
-      - if: $CONFIG{APP_CLAW_LUA_MODULE_TOUCH} == True
-    path: ../../lua_modules/lua_module_touch
-
-  lua_module_ir:
-    rules:
-      - if: $CONFIG{APP_CLAW_CAP_LUA} == True
-      - if: $CONFIG{APP_CLAW_LUA_MODULE_IR} == True
-    path: ../../lua_modules/lua_module_ir
-
-  lua_module_adc:
-    rules:
-      - if: $CONFIG{APP_CLAW_CAP_LUA} == True
-      - if: $CONFIG{APP_CLAW_LUA_MODULE_ADC} == True
-    path: ../../lua_modules/lua_module_adc
-
-  lua_module_call_capability:
-    rules:
-      - if: $CONFIG{APP_CLAW_CAP_LUA} == True
-      - if: $CONFIG{APP_CLAW_LUA_MODULE_CAPABILITY} == True
-    path: ../../lua_modules/lua_module_call_capability
-
   lua_module_button:
     rules:
       - if: $CONFIG{APP_CLAW_CAP_LUA} == True
       - if: $CONFIG{APP_CLAW_LUA_MODULE_BUTTON} == True
     path: ../../lua_modules/lua_module_button
 
-  lua_module_knob:
+  lua_module_call_capability:
     rules:
       - if: $CONFIG{APP_CLAW_CAP_LUA} == True
-      - if: $CONFIG{APP_CLAW_LUA_MODULE_KNOB} == True
-    path: ../../lua_modules/lua_module_knob
+      - if: $CONFIG{APP_CLAW_LUA_MODULE_CAPABILITY} == True
+    path: ../../lua_modules/lua_module_call_capability
 
   lua_module_camera:
     rules:
@@ -213,11 +185,11 @@ dependencies:
       - if: $CONFIG{APP_CLAW_LUA_MODULE_DISPLAY} == True
     path: ../../lua_modules/lua_module_display
 
-  lua_module_lcd:
+  lua_module_environmental_sensor:
     rules:
       - if: $CONFIG{APP_CLAW_CAP_LUA} == True
-      - if: $CONFIG{APP_CLAW_LUA_MODULE_LCD} == True
-    path: ../../lua_modules/lua_module_lcd
+      - if: $CONFIG{APP_CLAW_LUA_MODULE_ENVIRONMENTAL_SENSOR} == True
+    path: ../../lua_modules/lua_module_environmental_sensor
 
   lua_module_esp_heap:
     rules:
@@ -231,23 +203,35 @@ dependencies:
       - if: $CONFIG{APP_CLAW_LUA_MODULE_EVENT_PUBLISHER} == True
     path: ../../lua_modules/lua_module_event_publisher
 
-  lua_module_gpio:
+  lua_module_fuel_gauge:
     rules:
       - if: $CONFIG{APP_CLAW_CAP_LUA} == True
-      - if: $CONFIG{APP_CLAW_LUA_MODULE_GPIO} == True
-    path: ../../lua_modules/lua_module_gpio
+      - if: $CONFIG{APP_CLAW_LUA_MODULE_FUEL_GAUGE} == True
+    path: ../../lua_modules/lua_module_fuel_gauge
 
-  lua_module_i2c:
+  lua_module_imu:
     rules:
       - if: $CONFIG{APP_CLAW_CAP_LUA} == True
-      - if: $CONFIG{APP_CLAW_LUA_MODULE_I2C} == True
-    path: ../../lua_modules/lua_module_i2c
+      - if: $CONFIG{APP_CLAW_LUA_MODULE_IMU} == True
+    path: ../../lua_modules/lua_module_imu
 
-  lua_module_ssd1306:
+  lua_module_ir:
     rules:
       - if: $CONFIG{APP_CLAW_CAP_LUA} == True
-      - if: $CONFIG{APP_CLAW_LUA_MODULE_SSD1306} == True
-    path: ../../lua_modules/lua_module_ssd1306
+      - if: $CONFIG{APP_CLAW_LUA_MODULE_IR} == True
+    path: ../../lua_modules/lua_module_ir
+
+  lua_module_knob:
+    rules:
+      - if: $CONFIG{APP_CLAW_CAP_LUA} == True
+      - if: $CONFIG{APP_CLAW_LUA_MODULE_KNOB} == True
+    path: ../../lua_modules/lua_module_knob
+
+  lua_module_lcd:
+    rules:
+      - if: $CONFIG{APP_CLAW_CAP_LUA} == True
+      - if: $CONFIG{APP_CLAW_LUA_MODULE_LCD} == True
+    path: ../../lua_modules/lua_module_lcd
 
   lua_module_lcd_touch:
     rules:
@@ -262,11 +246,17 @@ dependencies:
       - if: $CONFIG{APP_CLAW_LUA_MODULE_LED_STRIP} == True
     path: ../../lua_modules/lua_module_led_strip
 
-  lua_module_mcpwm:
+  lua_module_magnetometer:
     rules:
       - if: $CONFIG{APP_CLAW_CAP_LUA} == True
-      - if: $CONFIG{APP_CLAW_LUA_MODULE_MCPWM} == True
-    path: ../../lua_modules/lua_module_mcpwm
+      - if: $CONFIG{APP_CLAW_LUA_MODULE_MAGNETOMETER} == True
+    path: ../../lua_modules/lua_module_magnetometer
+
+  lua_module_ssd1306:
+    rules:
+      - if: $CONFIG{APP_CLAW_CAP_LUA} == True
+      - if: $CONFIG{APP_CLAW_LUA_MODULE_SSD1306} == True
+    path: ../../lua_modules/lua_module_ssd1306
 
   lua_module_storage:
     rules:
@@ -279,9 +269,3 @@ dependencies:
       - if: $CONFIG{APP_CLAW_CAP_LUA} == True
       - if: $CONFIG{APP_CLAW_LUA_MODULE_SYSTEM} == True
     path: ../../lua_modules/lua_module_system
-
-  lua_module_uart:
-    rules:
-      - if: $CONFIG{APP_CLAW_CAP_LUA} == True
-      - if: $CONFIG{APP_CLAW_LUA_MODULE_UART} == True
-    path: ../../lua_modules/lua_module_uart

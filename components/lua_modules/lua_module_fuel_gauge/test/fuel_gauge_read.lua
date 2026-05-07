@@ -27,12 +27,6 @@ local function cleanup()
         end)
         gauge = nil
     end
-    if bus then
-        pcall(function()
-            bus:close()
-        end)
-        bus = nil
-    end
 end
 
 local function run()

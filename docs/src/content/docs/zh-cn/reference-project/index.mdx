@@ -42,7 +42,7 @@ import ClawRunDiagram from "@/assets/images/claw_run.svg?url";
     - claw_memory/ 结构化记忆管理
     - claw_skill/ Skills 系统 — 技能元数据与加载
   - claw_capabilities/ **能力 Capability**
-    - cap_im_*/ IM 通讯（飞书、QQ、Telegram、微信）
+    - cap_im_platform/ 统一 IM 平台组件（飞书、QQ、Telegram、微信能力组）
     - cap_mcp_*/ MCP 协议（MCP Client、MCP Server）
     - cap_lua/ Lua 运行时管理
     - cap_skill_mgr/ `claw_skill` 的管理接口封装
@@ -53,17 +53,17 @@ import ClawRunDiagram from "@/assets/images/claw_run.svg?url";
     - lua_module_display/ 显示屏
     - lua_module_camera/ 摄像头
     - lua_module_audio/ 音频
-    - lua_module_mcpwm/ PWM
+    - lua_driver_mcpwm/ PWM
     - lua_module_button/ 按键
-    - lua_module_gpio/ GPIO
-    - lua_module_i2c/ I2C 总线
-    - lua_module_adc/ ADC 采样
+    - lua_driver_gpio/ GPIO
+    - lua_driver_i2c/ I2C 总线
+    - lua_driver_adc/ ADC 采样
     - lua_module_led_strip/ 灯带
     - lua_module_storage/ 存储
     - lua_module_delay/ 延时
     - lua_module_system/ 系统时间/内存/网络状态
     - lua_module_event_publisher/ 事件发布
-    - lua_module_uart/ UART 串口收发
+    - lua_driver_uart/ UART 串口收发
     - esp_painter/ 轻量绘图
 - docs/ 项目文档与图片
 </FileTree>
@@ -90,12 +90,12 @@ import ClawRunDiagram from "@/assets/images/claw_run.svg?url";
     - soul.md 人设
     - identity.md 身份
   - skills/
-    - skills_list.json Skills 清单（id、file、summary、cap_groups）
-    - *.md 各 Skill 文档
+    - skill_id/
+      - SKILL.md Skill 元数据与正文
+      - scripts/ Skill 自带脚本（可选）
   - scripts/
-    - hello.lua 出厂示例脚本
-    - audio_fft_2.lua 音频采集与频谱分析示例
-    - mcpwm_servo.lua 舵机 PWM 控制示例
+    - builtin/ 内置 Lua 测试脚本与库
+    - docs/ 内置 Lua 模块文档
     - *.lua 自定义 Lua 脚本
   - router_rules/
     - router_rules.json 自动化规则

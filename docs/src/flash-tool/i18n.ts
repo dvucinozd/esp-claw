@@ -17,8 +17,10 @@ export interface Strings {
   chooseChipLabel: string;
   chooseBrandLabel: string;
   chooseBoardLabel: string;
+  chooseConsoleOutputLabel: string;
   chooseChipPlaceholder: string;
   chooseBrandPlaceholder: string;
+  chooseConsoleOutputPlaceholder: string;
   boardAutoHint: string;
   selectedBoardLabel: string;
   noBrandSelected: string;
@@ -34,6 +36,7 @@ export interface Strings {
   flashBtn: string;
   flashBtnDisabledNoDevice: string;
   flashBtnDisabledNoFirmware: string;
+  flashBtnDisabledNoConsoleOutput: string;
   flashBtnDisabledNoMatch: string;
   actionReadyHint: string;
 
@@ -103,7 +106,7 @@ export interface Strings {
 const en: Strings = {
   pageTitle: "Flash Online",
   pageSubtitle:
-    "Connect a supported ESP board, flash the merged firmware in your browser, then finish Wi-Fi setup over UART.",
+    "Connect a supported ESP board, flash the merged firmware in your browser, then finish Wi-Fi setup.",
 
   connectBtn: "Connect",
   disconnectBtn: "Disconnect",
@@ -117,8 +120,10 @@ const en: Strings = {
   chooseChipLabel: "Choose Chip",
   chooseBrandLabel: "Choose Brand/Manufacturer/Series",
   chooseBoardLabel: "Choose Board",
+  chooseConsoleOutputLabel: "Console Output",
   chooseChipPlaceholder: "Choose a chip",
   chooseBrandPlaceholder: "Choose a brand/manufacturer/series",
+  chooseConsoleOutputPlaceholder: "Choose a console output",
   boardAutoHint: "Compatible boards are filtered automatically after device detection.",
   selectedBoardLabel: "Selected board",
   noBrandSelected: "No brand/manufacturer/series selected",
@@ -134,6 +139,7 @@ const en: Strings = {
   flashBtn: "Flash Firmware",
   flashBtnDisabledNoDevice: "Connect a device first",
   flashBtnDisabledNoFirmware: "Select a board first",
+  flashBtnDisabledNoConsoleOutput: "Select an available console output first",
   flashBtnDisabledNoMatch: "The selected board is not compatible with this device",
   actionReadyHint: "Select a compatible board, start flashing, and complete Wi-Fi setup.",
 
@@ -208,7 +214,7 @@ const en: Strings = {
 const zhCn: Strings = {
   pageTitle: "在线烧录",
   pageSubtitle:
-    "连接支持的 ESP 开发板，在浏览器内烧录合并固件，并通过 UART 完成 Wi‑Fi 初始化。",
+    "连接支持的 ESP 开发板，在浏览器内烧录合并固件，并完成 Wi‑Fi 初始化。",
 
   connectBtn: "连接",
   disconnectBtn: "断开",
@@ -222,8 +228,10 @@ const zhCn: Strings = {
   chooseChipLabel: "选择芯片",
   chooseBrandLabel: "选择品牌/生产商/开发版系列",
   chooseBoardLabel: "选择开发板",
+  chooseConsoleOutputLabel: "Console Output",
   chooseChipPlaceholder: "请选择芯片",
   chooseBrandPlaceholder: "请选择品牌/生产商/开发版系列",
+  chooseConsoleOutputPlaceholder: "请选择 Console Output",
   boardAutoHint: "连接设备后会根据芯片、Flash 和 PSRAM 自动筛选兼容开发板。",
   selectedBoardLabel: "当前开发板",
   noBrandSelected: "尚未选择品牌/生产商/开发版系列",
@@ -239,6 +247,7 @@ const zhCn: Strings = {
   flashBtn: "开始烧录",
   flashBtnDisabledNoDevice: "请先连接设备",
   flashBtnDisabledNoFirmware: "请先选择开发板",
+  flashBtnDisabledNoConsoleOutput: "请先选择可用的 Console Output",
   flashBtnDisabledNoMatch: "当前开发板与已连接设备不兼容",
   actionReadyHint: "请选择兼容的开发版，开始烧录，并完成 Wi-Fi 配置。",
 

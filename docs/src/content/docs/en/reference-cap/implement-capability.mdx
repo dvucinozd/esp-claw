@@ -64,8 +64,8 @@ typedef struct {
     - src
         - cap_my_feature.c implementation
     - skills optional skills bundle (see below)
-        - cap_my_feature.md Skill body (Markdown)
-        - skills_list.json Skill metadata
+        - cap_my_feature
+            - SKILL.md Skill metadata and body
 </FileTree>
 
 Minimal `CMakeLists.txt`:
@@ -262,26 +262,28 @@ Add `skills/` beside your sources:
 <FileTree>
 - cap_my_feature
     - **skills** bundle directory
-        - cap_my_feature.md    Skill Markdown
-        - skills_list.json     metadata manifest
+        - cap_my_feature
+            - SKILL.md         Skill metadata and body
 </FileTree>
 
-At runtime these files must land under the FATFS skills root (default `/fatfs/skills/`).
+At build time, `components/common/skill_builder` syncs these files under the FATFS skills root (default `/fatfs/skills/`).
 
-### `skills_list.json` shape
+### `SKILL.md` frontmatter shape
 
-```jsonc
+````md
+---
 {
-  "skills": [
-    {
-      "id": "my_feature",           // globally unique Skill id
-      "file": "cap_my_feature.md",  // filename relative to skills root
-      "summary": "One-line summary shown before activation",
-      "cap_groups": ["cap_my_feature"]  // groups opened alongside the Skill
-    }
-  ]
+  "name": "cap_my_feature",
+  "description": "One-line summary shown before activation",
+  "metadata": {
+    "cap_groups": ["cap_my_feature"],
+    "manage_mode": "readonly"
+  }
 }
-```
+---
+
+# cap_my_feature
+````
 
 Activating via `cap_skill` merges every listed group into the session’s LLM allow-list. One Skill may bind multiple groups—for example a “file editing” Skill that opens both `cap_files` and `cap_lua`.
 
@@ -304,8 +306,8 @@ For authoring guidance (templates, required sections), see the [Skills reference
 | Mutate core runtime | Call `claw_skill_*` / `claw_cap_*` | `cap_skill` |
 
 <Aside type="caution">
-  **Memory hygiene:**  
-  - Free scratch allocations before returning from `execute`  
-  - `output` is typically 4–8 KB; never assume unbounded space  
+  **Memory hygiene:**
+  - Free scratch allocations before returning from `execute`
+  - `output` is typically 4–8 KB; never assume unbounded space
   - For huge payloads, chunk, spill to disk, or return a path for follow-up reads
 </Aside>

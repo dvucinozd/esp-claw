@@ -24,7 +24,7 @@ pnpm-debug.log*
 public/d2/docs
 
 # firmware for test
-public/s3-nvs-reader.bin
+public/merged_binary/*.bin
 
 # AI Related files
 .codex

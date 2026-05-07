@@ -106,7 +106,7 @@ local function new_device_from_opts(opts, default_addr)
             assert(opts.scl, "fuel_gauge.new: missing 'scl'"),
             opts.frequency or opts.freq_hz or DEFAULT_FREQ_HZ
         )
-        owns_bus = true
+        owns_bus = opts.close_bus == true
     end
 
     local dev = bus:device(opts.addr or default_addr, 0)

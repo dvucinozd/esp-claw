@@ -31,7 +31,7 @@ Useful subtasks include:
 
 ```d2
 user: "User"
-cap_im: "cap_im_*"
+cap_im: "cap_im_platform"
 fatfs: "FATFS"
 router: "Event Router"
 inspect: "inspect_image\n(cap_llm_inspect)"
@@ -119,7 +119,7 @@ If multimodal is unavailable or the path is bad, the error string is returned in
 
 3. **Stateless**: no retained state; each invocation is its own mini-task.
 
-4. **Separation of concerns**: download lives in `cap_im_*`, paths in `cap_files`, analysis here.
+4. **Separation of concerns**: IM downloads live in `cap_im_platform`, paths in `cap_files`, analysis here.
 
 ## Extensions
 
@@ -130,6 +130,6 @@ Same pattern could power:
 - `classify_image` (different fixed system prompt)
 
 <Aside type="tip">
-  **Nested LLM vs. direct handling?**  
+  **Nested LLM vs. direct handling?**
   When the subtask needs semantics (describe an image, judge NL), nested LLM is the straightforward path. For deterministic work (IO, math), avoid nesting to cut latency and cost.
 </Aside>

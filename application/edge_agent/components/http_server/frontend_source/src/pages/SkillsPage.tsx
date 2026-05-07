@@ -10,6 +10,7 @@ import { Button } from '../components/ui/Button';
 import { Switch } from '../components/ui/Switch';
 import { Banner } from '../components/ui/Banner';
 import { ConfigTable } from '../components/ui/ConfigTable';
+import { RestartConfirmModal } from '../components/system/RestartConfirmModal';
 
 const SENTINEL_NONE = '__none__';
 
@@ -47,7 +48,7 @@ function isCapLuaEnabled(): boolean {
     .includes('cap_lua');
 }
 
-export const SkillsPage: Component = () => {
+export const SkillsPage: Component<{ onRestartRequest: () => void }> = (props) => {
   const tab = createConfigTab<SkillForm>({
     tab: 'skills',
     groups: ['skills', 'capabilities'],
@@ -67,6 +68,7 @@ export const SkillsPage: Component = () => {
   });
 
   const [search, setSearch] = createSignal('');
+  const [confirmOpen, setConfirmOpen] = createSignal(false);
   const enabledSet = createMemo(() => new Set(tab.form.enabled));
 
   const filtered = createMemo(() => {
@@ -92,6 +94,11 @@ export const SkillsPage: Component = () => {
   };
   const clearAll = () => {
     tab.setForm('enabled', []);
+  };
+
+  const handleSave = async () => {
+    await tab.save();
+    setConfirmOpen(true);
   };
 
   const summary = () =>
@@ -169,9 +176,18 @@ export const SkillsPage: Component = () => {
       <SavePanel
         dirty={tab.dirty()}
         saving={tab.saving()}
-        onSave={() => tab.save().catch(() => undefined)}
+        onSave={() => handleSave().catch(() => undefined)}
         onDiscard={tab.discard}
         note={t('restartHint') as string}
+      />
+      <RestartConfirmModal
+        open={confirmOpen()}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          props.onRestartRequest();
+        }}
+        subtitle={t('restartHint') as string}
       />
     </TabShell>
   );

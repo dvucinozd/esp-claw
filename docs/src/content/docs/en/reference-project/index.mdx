@@ -42,7 +42,7 @@ Today the code falls into four areas:
     - claw_memory/ Structured memory
     - claw_skill/ Skills — skill metadata and loading
   - claw_capabilities/ **Capability**
-    - cap_im_*/ IM (Feishu, QQ, Telegram, WeChat)
+    - cap_im_platform/ Unified IM platform component (Feishu, QQ, Telegram, WeChat groups)
     - cap_mcp_*/ MCP protocol (MCP client, MCP server)
     - cap_lua/ Lua runtime management
     - cap_skill_mgr/ Managed interface wrapper for `claw_skill`
@@ -53,17 +53,17 @@ Today the code falls into four areas:
     - lua_module_display/ Display
     - lua_module_camera/ Camera
     - lua_module_audio/ Audio
-    - lua_module_mcpwm/ PWM
+    - lua_driver_mcpwm/ PWM
     - lua_module_button/ Button
-    - lua_module_gpio/ GPIO
-    - lua_module_i2c/ I2C bus
-    - lua_module_adc/ ADC sampling
+    - lua_driver_gpio/ GPIO
+    - lua_driver_i2c/ I2C bus
+    - lua_driver_adc/ ADC sampling
     - lua_module_led_strip/ LED strip
     - lua_module_storage/ Storage
     - lua_module_delay/ Delays
     - lua_module_system/ System time, memory, and network status
     - lua_module_event_publisher/ Event publishing
-    - lua_module_uart/ UART serial I/O
+    - lua_driver_uart/ UART serial I/O
     - esp_painter/ Lightweight drawing helpers
 - docs/ Project documentation and images
 </FileTree>
@@ -90,12 +90,12 @@ All runtime data lives under the FATFS mount `/fatfs`:
     - soul.md Persona
     - identity.md Identity
   - skills/
-    - skills_list.json Skills manifest (id, file, summary, cap_groups)
-    - *.md Skill documents
+    - skill_id/
+      - SKILL.md Skill metadata and body
+      - scripts/ Skill-bundled scripts (optional)
   - scripts/
-    - hello.lua Factory sample script
-    - audio_fft_2.lua Audio capture and spectrum-analysis sample
-    - mcpwm_servo.lua Servo PWM control sample
+    - builtin/ Built-in Lua test scripts and libraries
+    - docs/ Built-in Lua module docs
     - *.lua Custom Lua scripts
   - router_rules/
     - router_rules.json Automation rules

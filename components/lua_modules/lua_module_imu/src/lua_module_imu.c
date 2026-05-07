@@ -87,7 +87,6 @@ typedef struct {
     int8_t      i2c_addr;
     int32_t     frequency;
     int8_t      int_gpio_num;
-    int8_t      sdo_gpio_num;
     uint8_t     peripheral_count;
     const char *peripheral_name;
 } lua_imu_board_cfg_t;
@@ -520,7 +519,14 @@ static void lua_module_imu_destroy_handle(lua_module_imu_handle_t *handle)
     handle->sensor_initialized = false;
 #endif
     if (handle->i2c_bus_handle != NULL) {
-        i2c_bus_delete(&handle->i2c_bus_handle);
+        if (handle->peripheral_ref_held) {
+            /* The board manager owns the shared master bus lifecycle. Dropping
+             * the wrapper handle locally avoids trying to deinit a bus that
+             * still has other board-managed devices attached. */
+            handle->i2c_bus_handle = NULL;
+        } else {
+            i2c_bus_delete(&handle->i2c_bus_handle);
+        }
     }
     if (handle->int_gpio_num >= 0) {
         gpio_reset_pin(handle->int_gpio_num);
@@ -756,6 +762,17 @@ static int lua_module_imu_read_int_status(lua_State *L)
 static esp_err_t lua_module_imu_load_board_defaults(const char *device_name,
                                                     lua_imu_resolved_cfg_t *out)
 {
+    if (out == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    /* Custom board configs may omit optional GPIOs such as INT and SDO/AD0.
+     * Keep them explicitly disabled unless the board or Lua opts provide one. */
+    out->int_gpio_num = -1;
+    out->has_int_gpio = false;
+    out->sdo_gpio_num = -1;
+    out->has_sdo_gpio = false;
+
     void *raw = NULL;
     esp_err_t err = esp_board_manager_get_device_config(device_name, &raw);
     if (err != ESP_OK || raw == NULL) {
@@ -781,10 +798,10 @@ static esp_err_t lua_module_imu_load_board_defaults(const char *device_name,
         out->frequency = board->frequency;
         out->has_frequency = true;
     }
-    out->int_gpio_num = board->int_gpio_num;
-    out->has_int_gpio = true;
-    out->sdo_gpio_num = board->sdo_gpio_num;
-    out->has_sdo_gpio = true;
+    if (board->int_gpio_num >= 0) {
+        out->int_gpio_num = board->int_gpio_num;
+        out->has_int_gpio = true;
+    }
 
     return ESP_OK;
 }

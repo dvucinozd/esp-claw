@@ -1,10 +1,34 @@
 # Lua Module Component Spec
 
-This document defines the source layout and authoring rules for `components/lua_modules/lua_module_xx`.
+This document defines the source layout and authoring rules for components under `components/lua_modules/`.
+
+Two naming conventions exist:
+
+- `lua_driver_xx` — low-level hardware peripheral drivers (ADC, GPIO, I2C, MCPWM, Touch, UART).
+- `lua_module_xx` — higher-level modules (display, storage, system, etc.).
 
 ## Directory Layout
 
-A standard `lua_module_xx` directory uses this layout:
+A standard component directory uses this layout:
+
+```text
+lua_driver_xx/
+├── CMakeLists.txt
+├── README.md
+├── skills/
+│   └── skill_id/
+│       ├── SKILL.md
+│       └── scripts/
+│           └── foo.lua
+├── test/
+│   └── xxx.lua
+├── lib/
+│   ├── lib_xx.md
+│   └── lib_xx.lua
+└── src/
+    ├── lua_driver_xx.c
+    └── lua_driver_xx.h
+```
 
 ```text
 lua_module_xx/
@@ -109,7 +133,7 @@ Expected output mapping:
 
 Rules:
 
-- `README.md` sync applies to components named `lua_module_*`.
+- `README.md` sync applies to components named `lua_module_*` or `lua_driver_*`.
 - `lib/` and `test/` sync preserve each file's relative path inside that category.
 - Every synced `lib/*.lua` file must have a same-name markdown doc at `lib/*.md`.
 - Root-level `.lua` files are not managed sync outputs.
@@ -118,6 +142,6 @@ The exact output roots are application-specific.
 
 ## Naming And Conflict Rules
 
-- Lua module directories must be named `lua_module_xx`.
+- Lua module directories must be named `lua_module_xx` or `lua_driver_xx`.
 - Synced script and library output paths must be globally unique.
 - A module must not maintain flat root-level `.lua` files.

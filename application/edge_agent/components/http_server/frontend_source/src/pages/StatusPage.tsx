@@ -4,7 +4,7 @@ import { TabShell } from '../components/layout/TabShell';
 import { PageHeader } from '../components/ui/PageHeader';
 import { StaticConfigBlock } from '../components/ui/ConfigBlocks';
 import { Button } from '../components/ui/Button';
-import { Modal } from '../components/ui/Modal';
+import { RestartConfirmModal } from '../components/system/RestartConfirmModal';
 import { appStatus, reloadStatus } from '../state/config';
 import { pushToast } from '../state/toast';
 
@@ -84,35 +84,14 @@ export const StatusPage: Component<{ onRestartRequest: () => void }> = (props) =
           </div>
         </StaticConfigBlock>
       </div>
-      <Modal
+      <RestartConfirmModal
         open={confirmOpen()}
         onClose={() => setConfirmOpen(false)}
-        title={t('restartConfirmTitle')}
-        subtitle={t('restartConfirmBody')}
-        widthClass="w-full max-w-md"
-        actions={
-          <>
-            <Button variant="ghost" onClick={() => setConfirmOpen(false)}>
-              {t('restartConfirmCancel')}
-            </Button>
-            <Button
-              variant="primary"
-              onClick={() => {
-                setConfirmOpen(false);
-                props.onRestartRequest();
-              }}
-            >
-              {t('restartConfirmAction')}
-            </Button>
-          </>
-        }
-      >
-        <div class="px-5 pb-2">
-          <p class="m-0 text-[0.88rem] text-[var(--color-text-secondary)]">
-            {t('restartConfirmHint')}
-          </p>
-        </div>
-      </Modal>
+        onConfirm={() => {
+          setConfirmOpen(false);
+          props.onRestartRequest();
+        }}
+      />
     </TabShell>
   );
 };

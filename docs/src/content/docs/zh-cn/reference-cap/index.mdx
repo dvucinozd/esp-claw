@@ -24,7 +24,7 @@ import LinkToSource from '@/components/LinkToSource.astro';
 
 | 分类 | 组件 | 说明 |
 |------|------|------|
-| **IM 接入** | `cap_im_*` | 即时通讯平台接入，同时作为事件源产生用户消息事件 |
+| **IM 接入** | `cap_im_platform` | 飞书、QQ、Telegram、微信的统一 IM 组件，并注册 `cap_im_tg` 等按平台划分的运行时 Group |
 | **文件系统** | `cap_files` | 受管 FATFS 目录的读写、编辑、复制、移动、列举与删除 |
 | **Lua 脚本** | `cap_lua` | Lua 脚本的写入、同步/异步执行与任务管理 |
 | **Skill 管理** | `cap_skill` | Skill 的注册/注销与激活/停用（暴露 core 功能为工具） |
@@ -53,7 +53,7 @@ esp_err_t cap_files_register_group(void)
 }
 ```
 
-`claw_cap_register_group` 内部会验证 Group ID 唯一性，并将所有描述符的 `init` 钩子执行完成后即完成注册。调用 `claw_cap_start_group` 后，生命周期钩子 `start` 被调用（如 TG 轮询任务启动）。
+`claw_cap_register_group` 内部会验证 Group ID 唯一性，并将所有描述符的 `init` 钩子执行完成后即完成注册。调用 `claw_cap_start_group` 后，生命周期钩子 `start` 被调用（如 `cap_im_platform` 中的 TG 轮询任务启动）。
 
 ## LLM 可见性控制
 
@@ -87,12 +87,12 @@ Capability 可通过以下三条路径被调用：
 
 <CardGrid>
   <LinkCard title="如何实现 Capability" href="./implement-capability" description="从零实现一个 cap_* 组件的完整步骤与最佳实践" />
-  <LinkCard title="cap_im_tg" href="./cap-im-tg" description="IM 接入代表：事件源 + 可调用工具的双重角色" />
+  <LinkCard title="cap_im_platform" href="./cap-im-platform" description="统一 IM 参考：飞书、QQ、Telegram 与微信" />
   <LinkCard title="cap_skill" href="./cap-skill" description="core 功能暴露代表：将 claw_skill 能力封装为工具" />
   <LinkCard title="cap_llm_inspect" href="./cap-llm-inspect" description="LLM 交互代表：在工具执行中嵌套发起 LLM 推理" />
   <LinkCard title="cap_files" href="./cap-files" description="文件系统代表：受管目录的读写、编辑、复制、移动与删除能力" />
   <LinkCard title="cap_system" href="./cap-system" description="系统信息代表：读取设备运行状态并支持安全重启" />
   <LinkCard title="cap_scheduler" href="./cap-scheduler" description="定时调度代表：基于时间触发事件，管理周期性任务" />
   <LinkCard title="cap_lua 与 Lua 综述" href="./cap-lua" description="Lua 脚本能力与 Lua 在 ESP-Claw 中的整体定位" />
-  <LinkCard title="Lua 扩展模块" href="./lua-modules" description="lua_module_* 的注册机制、实现方式与 display 模块分析" />
+  <LinkCard title="Lua 扩展模块" href="./lua-modules" description="lua_module_* / lua_driver_* 的注册机制、实现方式与 display 模块分析" />
 </CardGrid>

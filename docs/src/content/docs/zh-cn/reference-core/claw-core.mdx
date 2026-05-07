@@ -34,7 +34,7 @@ import { LinkCard, Aside } from '@astrojs/starlight/components';
 
 Event Router 的 `run_agent` 动作会同时设置这两个标志，实现异步提交 + 事件发布的响应路径。
 
-在拼装发往大语言模型的**当前轮用户提示**时，`claw_core` 会附带一段 **Behavior Notes**，说明最终助手结果通常会由框架自动投递给用户，因此一般不必再主动调用各 IM 的 `cap_im_*` 发送接口返回正文（减少重复回复）。
+在拼装发往大语言模型的**当前轮用户提示**时，`claw_core` 会附带一段 **Behavior Notes**，说明最终助手结果通常会由框架自动投递给用户，因此一般不必再主动调用 `cap_im_platform` 中的 IM 发送接口返回正文（减少重复回复）。
 
 <Aside type="tip" title="输出详细 Agent 工具调用过程">
     `claw_core` 支持输出详细 Agent 工具调用过程。

@@ -36,7 +36,7 @@ LLM 决策 → 生成 Lua 代码 → lua_write_script 保存 → lua_run_script 
 
 ### 3. 快速原型与扩展接口
 
-对于不熟悉 C 开发的用户，Lua 脚本提供了一种无需重新编译固件即可扩展设备行为的方式。通过 `lua_module_*` 机制注册的原生模块，可以将任意外设能力以简洁的 Lua API 暴露出来。
+对于不熟悉 C 开发的用户，Lua 脚本提供了一种无需重新编译固件即可扩展设备行为的方式。通过 `lua_module_*` / `lua_driver_*` 机制注册的原生模块，可以将任意外设能力以简洁的 Lua API 暴露出来。
 
 ## Lua 运行时概述
 
@@ -44,14 +44,14 @@ ESP-Claw 使用 Lua 解释器，通过 `cap_lua_runtime_*` 系列函数初始化
 
 ### 脚本路径管理
 
-`cap_lua` 的运行时文件需位于 Script 基目录（Script Base Dir）下。`edge_agent` 中 Script Base Dir 默认为 `/fatfs/scripts/`（应用可通过 `cap_lua_set_base_dir` 修改）。
+`cap_lua` 的可写运行时脚本需位于 Script 基目录（Script Base Dir）下。`edge_agent` 中 Script Base Dir 默认为 `/fatfs/scripts/`（应用可通过 `cap_lua_set_base_dir` 修改）。Skill 自带脚本是只读资源，允许以 `/fatfs/skills/<skill_id>/scripts/...` 形式执行。
 
-- `path` 必须是 `.lua` 文件，且位于 Script Base Dir 下。
+- `path` 必须是 `.lua` 文件。
 - `path` 可用两种形式：
-- 绝对路径：如 `/fatfs/scripts/hello.lua`（必须在 Base Dir 下，且不能包含 `..`）。
-- 简短相对名：如 `hello.lua`（会自动拼成 `${base_dir}/hello.lua`，不允许包含 `/`）。
-- `lua_list_scripts` 当前扫描 Base Dir 顶层并返回绝对路径列表（非递归）。
-- `lua_list_scripts.prefix` 也使用绝对路径前缀，并且必须位于 Base Dir 下。
+  - 简短相对路径：如 `hello.lua` 或 `demo/hello.lua`（会自动拼成 `${base_dir}/...`，且不能包含 `..`）。
+  - Skill 只读脚本绝对路径：如 `/fatfs/skills/light_switch/scripts/led_strip_switch.lua`（通常由 `{CUR_SKILL_DIR}` 占位符展开得到，必须位于 Skill 根目录下，且不能包含 `..`）。
+- `lua_list_scripts` 递归扫描 Script Base Dir，并返回相对路径列表。
+- `lua_list_scripts.prefix` 使用相对路径前缀，`keyword` 支持对相对路径做大小写不敏感匹配。
 
 ### 模块注册锁
 
@@ -60,7 +60,7 @@ ESP-Claw 使用 Lua 解释器，通过 `cap_lua_runtime_*` 系列函数初始化
 ```c
 // 应在应用初始化阶段（cap_lua_register_group 之前）注册模块
 lua_module_display_register();   // 注册 display 模块
-lua_module_gpio_register();      // 注册 gpio 模块
+lua_driver_gpio_register();      // 注册 gpio 模块
 // ...
 cap_lua_register_group();        // 之后锁定
 ```
@@ -186,14 +186,12 @@ running -> stopped
 
 `lua_list_async_jobs` 支持按状态过滤：`"all"` / `"queued"` / `"running"` / `"done"` / `"failed"` / `"timeout"` / `"stopped"`。
 
-## 与 Skill 停用守卫的协同
+## 与 Skill 的协同
 
-在 `edge_agent` 中，`cap_lua_run` Skill 已注册停用守卫：当仍有 Lua 异步任务在运行时，`deactivate_skill` 会被拒绝，并返回结构化原因（提示先调用 `lua_stop_async_job` 或 `lua_stop_all_async_jobs`）。
-
-该守卫在 `main.c` 的 `app_main` 中、`app_claw_start()` **返回之后**注册（`claw_skill_register_deactivate_guard("cap_lua_run", cap_lua_run_deactivate_guard)`），确保在 Skill 子系统完全就绪后再挂载守卫逻辑。
+`cap_lua` Skill 文档会指导模型在停用 Skill 前先检查并停止仍在运行的 Lua 异步任务。运行时也会通过 `cap_lua_async_jobs_provider` 把当前异步任务摘要注入上下文，帮助模型避免遗留长期任务。
 
 <Aside type="tip">
   **推荐工作流：** 对于控制外设的脚本（如持续动画），使用 `lua_run_script_async` 提交，LLM 可以立即告知用户「已启动」，随后用 `lua_get_async_job` 确认完成状态，而不会因等待脚本执行而阻塞 Agent 循环。
 </Aside>
 
-<LinkCard title="Lua 扩展模块" href="./lua-modules" description="lua_module_* 的注册机制、如何实现自定义模块，以及 display 模块完整分析" />
+<LinkCard title="Lua 扩展模块" href="./lua-modules" description="lua_module_* / lua_driver_* 的注册机制、如何实现自定义模块，以及 display 模块完整分析" />

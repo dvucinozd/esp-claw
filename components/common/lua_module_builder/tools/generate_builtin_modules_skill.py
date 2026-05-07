@@ -82,7 +82,7 @@ def render_table_cell(values: list[str]) -> str:
 def render_generated_skill(entries: list[dict]) -> str:
     lines = ['---', json.dumps(GENERATED_SKILL_META, indent=2), '---', '', '# Builtin Lua Modules', '']
     if not entries:
-        lines.extend(['No compiled lua_module component currently provides markdown docs or test scripts.', ''])
+        lines.extend(['No compiled lua_module/lua_driver component currently provides markdown docs or test scripts.', ''])
         return '\n'.join(lines)
 
     lines.extend(['To read documentation for a module, call `read_file("scripts/docs/<Doc file path>")`.',
@@ -112,7 +112,7 @@ def main() -> int:
     stamp_path = Path(args.stamp_path).resolve()
     depfile_path = Path(args.depfile).resolve()
 
-    sources = collect_build_component_sources(build_dir, name_prefix='lua_module_')
+    sources = collect_build_component_sources(build_dir, name_prefix=('lua_module_', 'lua_driver_'))
     entries = collect_lua_module_skill_entries(sources)
     write_generated_skill(skill_output_dir, entries)
     input_paths = [path for entry in entries for path in entry['doc_paths'] + entry['test_paths']]

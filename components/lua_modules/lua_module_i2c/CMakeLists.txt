@@ -1,8 +1,0 @@
-idf_component_register(
-    SRCS
-        "src/lua_module_i2c.c"
-    INCLUDE_DIRS
-        "src"
-    REQUIRES
-        cap_lua
-)

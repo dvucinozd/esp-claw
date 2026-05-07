@@ -24,11 +24,6 @@ dependencies:
   app_config:
     path: ../components/app_config
 
-  cap_im_wechat:
-    path: ../../../components/claw_capabilities/cap_im_wechat
-    rules:
-      - if: $CONFIG{APP_CLAW_CAP_IM_WECHAT} == True
-
   captive_dns:
     path: ../../../components/common/captive_dns
 

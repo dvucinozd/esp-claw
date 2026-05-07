@@ -16,7 +16,7 @@ Each `cap_*` capability registers and runs through the framework’s unified int
 | [claw_cap](./claw-cap) | Capability registry: descriptors and lifecycle per group, LLM-visible grouping, unified execution entry, and tools JSON for `claw_core`. |
 | [claw_event_router](./claw-event-router) | Unified event ingress: rule matching, action chains such as `call_cap` / `run_agent` / `run_script` / `send_message`; `run_agent` asynchronously submits to `claw_core` and the response is published via `agent_response` event. Event types are in `claw_event.h` and publishing APIs are in `claw_event_publisher.h`. |
 | [claw_memory](./claw-memory) | Read/write session history and long-term memory files; acts as a context provider for `claw_core`. |
-| [claw_skill](./claw-skill) | Skills tree, `skills_list.json` rendering, per-session activation persistence, and injection of “catalog + activated Skill docs” into the model context. |
+| [claw_skill](./claw-skill) | Skills tree, `SKILL.md` metadata rendering, per-session activation persistence, and injection of “catalog + activated Skill docs” into the model context. |
 
 ## Per-module docs
 

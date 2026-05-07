@@ -20,10 +20,10 @@ import { Aside } from '@astrojs/starlight/components';
 
 | 工具 ID | 描述 |
 |---------|------|
-| `list_skill` | 列出 `skills_list.json` 中所有已注册的 Skill |
-| `register_skill` | 向目录注册一个新 Skill（需提供 `.md` 文件已存在） |
-| `unregister_skill` | 从目录中移除一个 Skill |
-| `activate_skill` | 为当前 session 激活 Skill，同步开放对应 cap_groups |
+| `list_skill` | 列出 Skills 根目录下所有 Markdown 中发现的 Skill |
+| `register_skill` | 创建一个运行时管理的 `skills/<skill_id>/SKILL.md` 并重载注册表 |
+| `unregister_skill` | 删除一个运行时管理的 Skill Markdown 并重载注册表 |
+| `activate_skill` | 为当前 session 激活 Skill，同步开放对应 `metadata.cap_groups` |
 | `deactivate_skill` | 停用 Skill（或用 `"all"` 清除所有激活状态） |
 
 除 `list_skill` 外，其余工具均标记为 `CLAW_CAP_FLAG_CALLABLE_BY_LLM`，即 LLM 可直接调用。
@@ -69,15 +69,14 @@ sync_fn -> set_fn: "更新工具可见白名单"
 // 1. 路径安全：禁止 "/" 开头、".." 跳目录、反斜杠
 if (!cap_skill_path_is_valid(file_item->valuestring)) { ... }
 
-// 2. 文件必须已存在于受管目录
-// 路径必须在 /fatfs/skills/ 下，且以 .md 结尾
-if (!cap_skill_file_exists(skill_path)) { ... return ESP_ERR_NOT_FOUND; }
+// 2. file 必须匹配 <skill_id>/SKILL.md，且位于 /fatfs/skills/ 下
+if (!cap_skill_path_is_valid(skill_id, file)) { ... return ESP_ERR_INVALID_ARG; }
 
 // 3. 不允许重复 skill_id
 if (cap_skill_catalog_contains_id(skills, skill_id)) { ... return ESP_ERR_INVALID_ARG; }
 ```
 
-修改 `skills_list.json` 后立即调用 `claw_skill_reload_registry()` 使变更生效；若重载失败，自动回滚到修改前的内容，保持目录一致性。
+创建或删除 `SKILL.md` 后立即调用 `claw_skill_reload_registry()` 使变更生效；若重载失败，自动回滚到修改前的内容，保持目录一致性。
 
 ### Session 隔离
 
@@ -95,9 +94,9 @@ if (cap_skill_catalog_contains_id(skills, skill_id)) { ... return ESP_ERR_INVALI
 {
   "action": "activate_skill",
   "session_id": "tg::-123456",
-  "skill_id": "cap_lua_run",
+  "skill_id": "cap_lua",
   "ok": true,
-  "active_skill_ids": ["cap_lua_run", "cap_files"]
+  "active_skill_ids": ["cap_lua", "cap_files"]
 }
 ```
 
@@ -108,7 +107,7 @@ if (cap_skill_catalog_contains_id(skills, skill_id)) { ... return ESP_ERR_INVALI
   "ok": false,
   "error": "deactivate blocked by skill guard",
   "skill_id": "all",
-  "blocked_by": "cap_lua_run",
+  "blocked_by": "cap_lua",
   "reason": "1 Lua async job(s) still running..."
 }
 ```
