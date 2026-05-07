@@ -24,6 +24,7 @@ static const char *TAG = "wifi_manager";
 #define WIFI_FAIL_BIT       BIT1
 #define WIFI_RETRY_BASE_MS  1000
 #define WIFI_RETRY_MAX_MS   30000
+#define WIFI_FALLBACK_RETRY_MS 30000
 
 #ifndef CONFIG_APP_WIFI_AP_SSID_PREFIX
 #define CONFIG_APP_WIFI_AP_SSID_PREFIX "esp-claw"
@@ -309,16 +310,35 @@ static void reconnect_timer_cb(void *arg)
     if (!s_sta_configured) {
         return;
     }
+
+    if (s_mode == WIFI_MODE_AP_FALLBACK) {
+        ESP_LOGI(TAG, "Fallback retry: attempting STA reconnect");
+        s_mode = WIFI_MODE_APSTA_TRYING;
+        esp_err_t mode_err = esp_wifi_set_mode(WIFI_MODE_APSTA);
+        if (mode_err != ESP_OK) {
+            ESP_LOGW(TAG, "Fallback retry set_mode failed: %s", esp_err_to_name(mode_err));
+            if (s_reconnect_timer) {
+                esp_timer_stop(s_reconnect_timer);
+                esp_timer_start_once(s_reconnect_timer, (uint64_t)WIFI_FALLBACK_RETRY_MS * 1000ULL);
+            }
+            return;
+        }
+        apply_ap_config();
+    }
+
     esp_err_t err = esp_wifi_connect();
     if (err != ESP_OK && err != ESP_ERR_WIFI_CONN) {
         ESP_LOGW(TAG, "esp_wifi_connect failed: %s", esp_err_to_name(err));
+        if (s_mode == WIFI_MODE_AP_FALLBACK && s_reconnect_timer) {
+            esp_timer_stop(s_reconnect_timer);
+            esp_timer_start_once(s_reconnect_timer, (uint64_t)WIFI_FALLBACK_RETRY_MS * 1000ULL);
+        }
     }
 }
 
 static esp_err_t fallback_to_ap(void)
 {
     s_mode = WIFI_MODE_AP_FALLBACK;
-    s_sta_configured = false;
     s_retry_count = 0;
 
     esp_err_t err = esp_wifi_set_mode(WIFI_MODE_AP);
@@ -327,6 +347,11 @@ static esp_err_t fallback_to_ap(void)
     }
     apply_ap_config();
     refresh_ap_ip_str();
+    if (s_sta_configured && s_reconnect_timer) {
+        esp_timer_stop(s_reconnect_timer);
+        esp_timer_start_once(s_reconnect_timer, (uint64_t)WIFI_FALLBACK_RETRY_MS * 1000ULL);
+        ESP_LOGW(TAG, "AP fallback active, next STA retry in %d ms", WIFI_FALLBACK_RETRY_MS);
+    }
     notify_state_changed(true);
     return ESP_OK;
 }
