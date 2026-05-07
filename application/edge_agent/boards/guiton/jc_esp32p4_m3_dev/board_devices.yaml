@@ -73,6 +73,7 @@ devices:
     chip: jd9365
     type: display_lcd
     sub_type: dsi
+    init_skip: true
     dependencies:
       waveshare/esp_lcd_jd9365_10_1: "^1.0.3"
     config:
@@ -113,6 +114,7 @@ devices:
     chip: gt911
     type: lcd_touch_i2c
     version: default
+    init_skip: true
     dependencies:
       esp_lcd_touch:
         version: "*"
@@ -148,8 +150,14 @@ devices:
     type: camera
     version: default
     sub_type: "csi"
+    dependencies:
+      espressif/esp_video: "^2.0.0"
+      espressif/esp_cam_sensor: "*"
     config:
       csi_config:
+        # Connector mapping (from board docs):
+        # - MIPI CSI lanes/clock: dedicated CSI hardware pins (not regular GPIOs)
+        # - SCCB/I2C: SDA=GPIO7, SCL=GPIO8 via i2c_master peripheral
         reset_io: -1
         pwdn_io: -1
         dont_init_ldo: true

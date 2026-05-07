@@ -14,7 +14,7 @@ This board definition is based on vendor files from:
 - Microphone/speaker path: enabled via `audio_adc` and `audio_dac`
 - Display: `JD9365` MIPI-DSI panel (`800x1280`)
 - Touch: `GT911` over I2C
-- Camera: MIPI-CSI (`camera` device)
+- Camera: `OV5647` over MIPI-CSI (`camera` device)
 - SD card: SDMMC slot0 (`fs_sdcard`)
 - SPI flash FS: `fs_spiffs`
 - Backlight: LEDC fallback (`GPIO23`)
@@ -28,6 +28,8 @@ This board definition is based on vendor files from:
 - If LCD init succeeds but panel remains dark, implement I2C backlight control path.
 - Vendor Arduino audio demo references ES8311 address `0x18`, while ESP board-manager examples often use `0x30`.
   If audio init fails, test the alternate address.
+- If camera options do not apply after switching from another board, remove local `application/edge_agent/sdkconfig`
+  and run `idf.py reconfigure` so board defaults are regenerated.
 
 ## Pin References Used
 
@@ -36,3 +38,6 @@ This board definition is based on vendor files from:
 - PA control: `11`
 - SDMMC (slot0 mux): D0 `39`, D1 `40`, D2 `41`, D3 `42`, CMD `44`, CLK `43`
 - RS485 (example): UART1 TX `26`, RX `27`
+- Camera SCCB/I2C: SDA `7`, SCL `8`
+- Camera RESET/PWDN: `-1` (not connected)
+- Camera MIPI CSI D0/D1/CLK: dedicated CSI connector pins (not configured as GPIO)
