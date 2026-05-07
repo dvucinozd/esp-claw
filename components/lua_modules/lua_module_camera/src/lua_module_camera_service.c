@@ -29,7 +29,7 @@
 #define CAMERA_SETTLE_TIMEOUT_MS   30000  /* settle at open time, allow slow SPI sensors */
 #define CAMERA_BUFFER_COUNT            3
 #define CAMERA_STREAM_SETTLE_FRAMES    3  /* reduced: 3 frames enough for AE/AWB stabilize */
-#define CAMERA_JPEG_QUALITY           80
+#define CAMERA_JPEG_QUALITY           92
 #define CAMERA_MIN_JPEG_BUFFER_SIZE (64 * 1024)
 
 static const char *TAG = "camera_service";

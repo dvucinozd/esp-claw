@@ -16,7 +16,7 @@ This board definition is based on vendor files from:
 - Touch: `GT911` over I2C
 - Camera: `OV5647` over MIPI-CSI (`camera` device)
 - SD card: SDMMC slot0 (`fs_sdcard`)
-- SPI flash FS: `fs_spiffs`
+- SPI flash FS: disabled on this board profile (SD card `/sdcard` is primary storage)
 - Backlight: LEDC fallback (`GPIO23`)
 - RS485: UART1 (`TX=26`, `RX=27`) peripheral added
 

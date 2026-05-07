@@ -60,15 +60,6 @@ devices:
           d7: 0
         ldo_chan_id: 4
 
-  - name: fs_spiffs
-    type: fs_spiffs
-    version: default
-    config:
-      base_path: "/spiffs"
-      partition_label: NULL
-      max_files: 5
-      format_if_mount_failed: false
-
   - name: display_lcd
     chip: jd9365
     type: display_lcd
