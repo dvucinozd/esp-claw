@@ -13,6 +13,7 @@ esp_err_t http_server_send_embedded_file(httpd_req_t *req,
                                          const uint8_t *end,
                                          const char *content_type)
 {
+    static const size_t k_chunk_size = 1024;
     size_t content_len = (size_t)(end - start);
     if (content_len > 0 && start[content_len - 1] == '\0') {
         content_len--;
@@ -20,7 +21,22 @@ esp_err_t http_server_send_embedded_file(httpd_req_t *req,
     httpd_resp_set_type(req, content_type);
     httpd_resp_set_hdr(req, "Cache-Control", "no-store, max-age=0");
     httpd_resp_set_hdr(req, "Pragma", "no-cache");
-    return httpd_resp_send(req, (const char *)start, content_len);
+
+    size_t sent = 0;
+    while (sent < content_len) {
+        size_t chunk_len = content_len - sent;
+        if (chunk_len > k_chunk_size) {
+            chunk_len = k_chunk_size;
+        }
+
+        esp_err_t err = httpd_resp_send_chunk(req, (const char *)(start + sent), chunk_len);
+        if (err != ESP_OK) {
+            return err;
+        }
+        sent += chunk_len;
+    }
+
+    return httpd_resp_send_chunk(req, NULL, 0);
 }
 
 void http_server_json_add_string(cJSON *root, const char *key, const char *value)

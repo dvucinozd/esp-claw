@@ -76,6 +76,9 @@ esp_err_t http_server_start(void)
     config.lru_purge_enable = true;
     config.close_fn = http_server_close_fn;
     config.uri_match_fn = httpd_uri_match_wildcard;
+    /* Wi-Fi remote transport can be bursty; allow longer socket send/recv wait. */
+    config.send_wait_timeout = 30;
+    config.recv_wait_timeout = 30;
 
     ESP_RETURN_ON_ERROR(httpd_start(&s_ctx.server, &config), TAG, "Failed to start HTTP server");
     ESP_RETURN_ON_ERROR(http_server_register_assets_routes(s_ctx.server), TAG, "Failed to register assets routes");
