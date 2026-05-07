@@ -79,6 +79,7 @@ static esp_err_t fallback_to_ap(void);
 static void reconnect_timer_cb(void *arg);
 static esp_err_t configure_sta_mode(const wifi_manager_config_t *config);
 static void reset_sta_runtime_state(void);
+static void disable_provision_ap_if_needed(void);
 
 static const char *wifi_manager_ap_ssid_prefix(void)
 {
@@ -141,6 +142,21 @@ static void reset_sta_runtime_state(void)
     s_connected = false;
     s_retry_count = 0;
     xEventGroupClearBits(s_wifi_event_group, WIFI_CONNECTED_BIT | WIFI_FAIL_BIT);
+}
+
+static void disable_provision_ap_if_needed(void)
+{
+    if (!s_ap_active || s_config.keep_ap_on_sta_connected) {
+        return;
+    }
+
+    esp_err_t err = esp_wifi_set_mode(WIFI_MODE_STA);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "Failed to disable provisioning AP after STA connect: %s", esp_err_to_name(err));
+        return;
+    }
+
+    ESP_LOGI(TAG, "STA connected, provisioning AP disabled");
 }
 
 static esp_err_t configure_sta_mode(const wifi_manager_config_t *config)
@@ -262,6 +278,7 @@ static void wifi_event_handler(void *arg,
         s_connected = true;
         s_mode = s_ap_active ? WIFI_MODE_APSTA_OK : s_mode;
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
+        disable_provision_ap_if_needed();
         notify_state_changed(true);
     }
 }
