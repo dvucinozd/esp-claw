@@ -35,6 +35,7 @@ static const char *TAG = "cap_im_tg";
 #define CAP_IM_TG_MAX_MSG_LEN         4096
 #define CAP_IM_TG_POLL_TIMEOUT_S      20
 #define CAP_IM_TG_RETRY_DELAY_MS      3000
+#define CAP_IM_TG_CONFLICT_BACKOFF_MS ((CAP_IM_TG_POLL_TIMEOUT_S + 2) * 1000)
 #define CAP_IM_TG_ATTACHMENT_QUEUE_LEN 8
 #define CAP_IM_TG_DEDUP_CACHE_SIZE    64
 #define CAP_IM_TG_PATH_BUF_SIZE       256
@@ -227,6 +228,10 @@ static esp_err_t cap_im_tg_api_call(const char *method,
 
     if (status < 200 || status >= 300) {
         ESP_LOGW(TAG, "Telegram API error %d: %s", status, resp.buf ? resp.buf : "");
+        if (status == 409) {
+            free(resp.buf);
+            return ESP_ERR_INVALID_STATE;
+        }
         free(resp.buf);
         return ESP_FAIL;
     }
@@ -1064,6 +1069,78 @@ static esp_err_t cap_im_tg_send_multipart_file(const char *method,
     return ESP_OK;
 }
 
+static size_t cap_im_tg_utf8_expected_len(unsigned char lead)
+{
+    if ((lead & 0x80U) == 0x00U) {
+        return 1;
+    }
+    if ((lead & 0xE0U) == 0xC0U) {
+        return 2;
+    }
+    if ((lead & 0xF0U) == 0xE0U) {
+        return 3;
+    }
+    if ((lead & 0xF8U) == 0xF0U) {
+        return 4;
+    }
+    return 1;
+}
+
+static bool cap_im_tg_utf8_chunk_is_valid(const char *data, size_t len)
+{
+    size_t i = 1;
+
+    while (i < len) {
+        if ((((unsigned char)data[i]) & 0xC0U) != 0x80U) {
+            return false;
+        }
+        i++;
+    }
+    return true;
+}
+
+static size_t cap_im_tg_utf8_safe_chunk_len(const char *text,
+                                            size_t offset,
+                                            size_t text_len,
+                                            size_t max_len)
+{
+    size_t i = offset;
+    size_t limit = offset + max_len;
+    size_t last_good = offset;
+
+    if (limit > text_len) {
+        limit = text_len;
+    }
+
+    while (i < limit) {
+        size_t char_len = cap_im_tg_utf8_expected_len((unsigned char)text[i]);
+        if (char_len == 1) {
+            i++;
+            last_good = i;
+            continue;
+        }
+
+        if (i + char_len > limit) {
+            break;
+        }
+
+        if (!cap_im_tg_utf8_chunk_is_valid(text + i, char_len)) {
+            /* Invalid UTF-8 lead/continuation sequence; send one byte to avoid stall. */
+            i++;
+            last_good = i;
+            continue;
+        }
+
+        i += char_len;
+        last_good = i;
+    }
+
+    if (last_good == offset) {
+        return (limit > offset) ? (limit - offset) : 0;
+    }
+    return last_good - offset;
+}
+
 static esp_err_t cap_im_tg_send_media(const char *chat_id,
                                       const char *path,
                                       const char *caption,
@@ -1097,13 +1174,20 @@ static void cap_im_tg_poll_task(void *arg)
     (void)arg;
 
     while (!s_tg.stop_requested) {
-        if (cap_im_tg_poll_once() != ESP_OK) {
+        esp_err_t err = cap_im_tg_poll_once();
+        if (err != ESP_OK) {
             if (s_tg.stop_requested) {
                 break;
             }
 
-            ESP_LOGW(TAG, "Telegram polling failed, retrying");
-            vTaskDelay(pdMS_TO_TICKS(CAP_IM_TG_RETRY_DELAY_MS));
+            if (err == ESP_ERR_INVALID_STATE) {
+                ESP_LOGW(TAG, "Telegram getUpdates conflict (409), backing off for %d ms",
+                         CAP_IM_TG_CONFLICT_BACKOFF_MS);
+                vTaskDelay(pdMS_TO_TICKS(CAP_IM_TG_CONFLICT_BACKOFF_MS));
+            } else {
+                ESP_LOGW(TAG, "Telegram polling failed, retrying");
+                vTaskDelay(pdMS_TO_TICKS(CAP_IM_TG_RETRY_DELAY_MS));
+            }
         }
     }
 
@@ -1184,7 +1268,7 @@ static esp_err_t cap_im_tg_gateway_start(void)
 
 static esp_err_t cap_im_tg_gateway_stop(void)
 {
-    TickType_t deadline = xTaskGetTickCount() + pdMS_TO_TICKS(5000);
+    TickType_t deadline = xTaskGetTickCount() + pdMS_TO_TICKS((CAP_IM_TG_POLL_TIMEOUT_S + 8) * 1000);
 
     if (!s_tg.poll_task) {
         return ESP_OK;
@@ -1471,7 +1555,14 @@ esp_err_t cap_im_tg_send_text(const char *chat_id, const char *text)
         esp_err_t err;
 
         if (chunk_len > CAP_IM_TG_MAX_MSG_LEN) {
-            chunk_len = CAP_IM_TG_MAX_MSG_LEN;
+            chunk_len = cap_im_tg_utf8_safe_chunk_len(text,
+                                                      offset,
+                                                      text_len,
+                                                      CAP_IM_TG_MAX_MSG_LEN);
+        }
+
+        if (chunk_len == 0) {
+            break;
         }
 
         chunk = calloc(1, chunk_len + 1);
