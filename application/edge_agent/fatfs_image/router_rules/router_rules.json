@@ -92,7 +92,7 @@
   {
     "id": "agent_stage_im_notify",
     "description": "Deliver agent stage progress messages to the original IM chat.",
-    "enabled": true,
+    "enabled": false,
     "consume_on_match": true,
     "ack": "{{event.source_channel}} agent stage sent",
     "match": {
