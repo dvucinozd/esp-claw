@@ -47,6 +47,8 @@ peripherals:
   - name: ldo_mipi
     type: ldo
     config:
+      # LDO channel powering the MIPI domain used by both DSI panel and CSI camera.
+      # Keeping this shared avoids split power sequencing across two analog rails.
       chan_id: 3
       voltage_mv: 2500
       adjustable: 1
@@ -55,9 +57,12 @@ peripherals:
   - name: dsi_display
     type: dsi
     config:
+      # DSI host 0 is the primary display path on this board design.
       bus_id: 0
+      # Panel is wired in 2-lane DSI mode (not 4-lane).
       data_lanes: 2
       phy_clk_src: 0
+      # Matches the current JD9365 timing profile used in board_devices.yaml.
       lane_bit_rate_mbps: 1500
 
   # This board family has two backlight control variants in vendor examples:
@@ -68,10 +73,13 @@ peripherals:
     type: ledc
     version: default
     config:
+      # PWM output routed to panel backlight transistor/input.
       gpio_num: 23
+      # Low-speed mode is stable for backlight dimming and avoids extra clock pressure.
       speed_mode: LEDC_LOW_SPEED_MODE
       channel: 1
       timer_sel: 1
+      # Start at 0; brightness device sets effective duty at runtime.
       duty: 0
 
   # RS485 demo wiring from vendor IDF examples (UART1: TX=26, RX=27)
