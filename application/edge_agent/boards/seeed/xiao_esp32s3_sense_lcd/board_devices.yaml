@@ -69,3 +69,11 @@ devices:
       adc_channel_labels: ['MIC']
     peripherals:
       - name: i2s_pdm_mic
+
+  - name: lcd_brightness
+    type: ledc_ctrl
+    version: default
+    config:
+      default_percent: 100
+    peripherals:
+      - name: ledc_backlight

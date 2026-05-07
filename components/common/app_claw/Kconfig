@@ -15,6 +15,15 @@ menu "App Claw Config"
             Enable expression emote startup and emote asset packaging for boards
             with LCD display support.
 
+    config APP_CLAW_BOOT_LUA_SMOKE_TEST
+        bool "Run Lua camera/LCD smoke test on boot"
+        depends on APP_CLAW_CAP_LUA
+        default n
+        help
+            Run a one-shot Lua smoke test for camera and LCD demos during
+            startup and print pass/fail logs. Useful for board bring-up and
+            field diagnostics when serial CLI input is unreliable.
+
     choice APP_CLAW_MEMORY_MODE
         prompt "App Claw memory management mode"
         default APP_CLAW_MEMORY_MODE_FULL

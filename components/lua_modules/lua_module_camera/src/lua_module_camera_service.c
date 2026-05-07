@@ -37,6 +37,7 @@ static const char *TAG = "camera_service";
 static esp_err_t camera_settle_stream_locked(int64_t deadline_us);
 static void camera_fourcc_to_string(uint32_t pixel_format, char out[5]);
 static esp_err_t camera_requeue_buffer_locked(struct v4l2_buffer *buffer);
+static esp_err_t camera_errno_to_err(int err);
 
 typedef struct {
     SemaphoreHandle_t lock;
@@ -114,6 +115,22 @@ static void camera_fourcc_to_string(uint32_t pixel_format, char out[5])
         if (out[i] < 32 || out[i] > 126) {
             out[i] = '.';
         }
+    }
+}
+
+static esp_err_t camera_errno_to_err(int err)
+{
+    switch (err) {
+    case ENOENT:
+        return ESP_ERR_NOT_FOUND;
+    case EBUSY:
+    case EACCES:
+    case EPERM:
+        return ESP_ERR_INVALID_STATE;
+    case ENOMEM:
+        return ESP_ERR_NO_MEM;
+    default:
+        return ESP_FAIL;
     }
 }
 
@@ -266,6 +283,15 @@ static esp_err_t camera_open_locked(const char *dev_path)
     struct v4l2_format format = {0};
     struct v4l2_requestbuffers request = {0};
     char pixel_format[5] = {0};
+    const char *requested_path = dev_path;
+    int open_errno = 0;
+    static const char *fallback_paths[] = {
+        "/dev/video0",
+        "/dev/video1",
+        "/dev/video2",
+        "/dev/video3",
+        "/dev/video4",
+    };
     esp_err_t err;
 
     if (s_camera.opened) {
@@ -278,9 +304,32 @@ static esp_err_t camera_open_locked(const char *dev_path)
 
     s_camera.fd = open(dev_path, O_RDWR);
     if (s_camera.fd < 0) {
-        ESP_LOGE(TAG, "Failed to open %s (errno=%d)", dev_path, errno);
+        open_errno = errno;
+        ESP_LOGW(TAG, "Failed to open %s (errno=%d). Trying fallback camera nodes.",
+                 dev_path, open_errno);
+
+        for (size_t i = 0; i < sizeof(fallback_paths) / sizeof(fallback_paths[0]); ++i) {
+            const char *candidate = fallback_paths[i];
+
+            if (strcmp(candidate, requested_path) == 0) {
+                continue;
+            }
+
+            s_camera.fd = open(candidate, O_RDWR);
+            if (s_camera.fd >= 0) {
+                dev_path = candidate;
+                ESP_LOGI(TAG, "Recovered camera open using fallback path: %s", dev_path);
+                break;
+            }
+            open_errno = errno;
+        }
+    }
+
+    if (s_camera.fd < 0) {
+        ESP_LOGE(TAG, "Failed to open camera node (requested=%s, last errno=%d)",
+                 requested_path, open_errno);
         s_camera.fd = -1;
-        return ESP_ERR_NOT_FOUND;
+        return camera_errno_to_err(open_errno);
     }
 
     format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;

@@ -27,6 +27,7 @@
 #include "claw_memory.h"
 #include "claw_skill.h"
 #include "esp_check.h"
+#include "esp_err.h"
 #include "esp_log.h"
 #include "freertos/task.h"
 #if CONFIG_APP_CLAW_CAP_LUA
@@ -67,10 +68,78 @@ static const char *APP_STARTUP_EVENT_KEY = "boot_completed";
     APP_SYSTEM_PROMPT_COMMON \
     APP_SYSTEM_PROMPT_SUFFIX
 
+#if CONFIG_APP_CLAW_CAP_LUA && CONFIG_APP_CLAW_BOOT_LUA_SMOKE_TEST
+#define APP_BOOT_LUA_SMOKE_TASK_STACK (16 * 1024)
+#define APP_BOOT_LUA_SMOKE_TASK_PRIO  4
+
+static void app_claw_boot_lua_smoke_task(void *arg)
+{
+    (void)arg;
+    static const struct {
+        const char *name;
+        const char *path;
+        uint32_t timeout_ms;
+    } tests[] = {
+        { "camera_capture", "builtin/test/camera_capture.lua", 20000 },
+        { "display_shapes", "builtin/test/display_shapes.lua", 20000 },
+    };
+    char output[1024];
+
+    ESP_LOGW(TAG, "Boot Lua smoke test started (camera + LCD)");
+    for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
+        esp_err_t err;
+        bool script_ok = false;
+
+        memset(output, 0, sizeof(output));
+        err = cap_lua_run_script(tests[i].path, "{}", tests[i].timeout_ms, output, sizeof(output));
+        script_ok = (err == ESP_OK);
+        if (script_ok && output[0]) {
+            if (strstr(output, "ERROR:") || strstr(output, " failed") || strstr(output, "FAIL")) {
+                script_ok = false;
+            }
+        }
+
+        if (script_ok) {
+            ESP_LOGW(TAG, "SMOKE PASS: %s (%s)", tests[i].name, tests[i].path);
+            if (output[0]) {
+                ESP_LOGW(TAG, "SMOKE OUTPUT [%s]: %s", tests[i].name, output);
+            }
+        } else {
+            ESP_LOGE(TAG, "SMOKE FAIL: %s (%s): %s",
+                     tests[i].name, tests[i].path,
+                     err == ESP_OK ? "script reported failure text" : esp_err_to_name(err));
+            if (output[0]) {
+                ESP_LOGE(TAG, "SMOKE OUTPUT [%s]: %s", tests[i].name, output);
+            }
+        }
+    }
+    ESP_LOGW(TAG, "Boot Lua smoke test finished");
+    vTaskDelete(NULL);
+}
+
+static void app_claw_schedule_boot_lua_smoke_test(void)
+{
+    BaseType_t created = xTaskCreate(app_claw_boot_lua_smoke_task,
+                                     "app_lua_smoke",
+                                     APP_BOOT_LUA_SMOKE_TASK_STACK,
+                                     NULL,
+                                     APP_BOOT_LUA_SMOKE_TASK_PRIO,
+                                     NULL);
+    if (created != pdPASS) {
+        ESP_LOGE(TAG, "Failed to create boot Lua smoke test task");
+    }
+}
+#endif
+
 esp_err_t app_claw_ui_start(void)
 {
 #if defined(CONFIG_APP_CLAW_ENABLE_EMOTE)
-    return emote_start();
+    esp_err_t err = emote_start();
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "UI init failed (%s). Continuing in headless mode.",
+                 esp_err_to_name(err));
+    }
+    return ESP_OK;
 #else
     return ESP_OK;
 #endif
@@ -355,6 +424,9 @@ esp_err_t app_claw_start(const app_claw_config_t *config,
 
 #if CONFIG_APP_CLAW_ENABLE_CLI
     ESP_RETURN_ON_ERROR(app_claw_cli_start(), TAG, "Failed to start CLI");
+#endif
+#if CONFIG_APP_CLAW_CAP_LUA && CONFIG_APP_CLAW_BOOT_LUA_SMOKE_TEST
+    app_claw_schedule_boot_lua_smoke_test();
 #endif
     ESP_RETURN_ON_ERROR(app_claw_publish_startup_event(), TAG,
                         "Failed to publish startup event");
