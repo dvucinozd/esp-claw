@@ -60,6 +60,10 @@ peripherals:
       phy_clk_src: 0
       lane_bit_rate_mbps: 1500
 
+  # This board family has two backlight control variants in vendor examples:
+  # - GPIO23 via PWM (LEDC)
+  # - I2C brightness controller at 0x45 reg 0x96
+  # We keep LEDC as a generic default and can switch to I2C runtime control if needed.
   - name: ledc_backlight
     type: ledc
     version: default
@@ -69,3 +73,30 @@ peripherals:
       channel: 1
       timer_sel: 1
       duty: 0
+
+  # RS485 demo wiring from vendor IDF examples (UART1: TX=26, RX=27)
+  - name: uart_rs485
+    type: uart
+    config:
+      uart_num: 1
+      tx_io_num: 26
+      rx_io_num: 27
+      rts_io_num: -1
+      cts_io_num: -1
+      uart_mode: UART_MODE_RS485_HALF_DUPLEX
+      use_queue: false
+      intr_alloc_flags: 0
+      rx_buffer_size: 256
+      tx_buffer_size: 256
+      uart_config:
+        baud_rate: 115200
+        data_bits: UART_DATA_8_BITS
+        parity: UART_PARITY_DISABLE
+        stop_bits: UART_STOP_BITS_1
+        flow_ctrl: UART_HW_FLOWCTRL_DISABLE
+        rx_flow_ctrl_thresh: 0
+        source_clk: UART_SCLK_DEFAULT
+        lp_source_clk: NULL
+        flags:
+          allow_pd: 0
+          backup_before_sleep: 0

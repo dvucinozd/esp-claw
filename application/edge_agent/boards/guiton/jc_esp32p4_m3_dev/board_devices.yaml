@@ -15,6 +15,8 @@ devices:
         active_level: 1
       - name: i2s_audio_out
       - name: i2c_master
+        # Kept at 0x30 to match existing esp-claw/board-manager ES8311 configs.
+        # Vendor Arduino samples also show 0x18 depending on driver address format.
         address: 0x30
         frequency: 400000
 
@@ -43,6 +45,8 @@ devices:
         slot: SDMMC_HOST_SLOT_0
         frequency: SDMMC_FREQ_HIGHSPEED
         bus_width: 4
+        # Slot0 uses dedicated SDMMC IO-mux pins configured by driver.
+        # Vendor reference maps them to D0=39 D1=40 D2=41 D3=42 CMD=44 CLK=43.
         pins:
           clk: 0
           cmd: 0
@@ -56,12 +60,21 @@ devices:
           d7: 0
         ldo_chan_id: 4
 
+  - name: fs_spiffs
+    type: fs_spiffs
+    version: default
+    config:
+      base_path: "/spiffs"
+      partition_label: NULL
+      max_files: 5
+      format_if_mount_failed: false
+
   - name: display_lcd
-    chip: ek79007
+    chip: jd9365
     type: display_lcd
     sub_type: dsi
     dependencies:
-      espressif/esp_lcd_ek79007: "^1.0.0"
+      waveshare/esp_lcd_jd9365_10_1: "^1.0.3"
     config:
       reset_gpio_num: -1
       rgb_ele_order: LCD_RGB_ELEMENT_ORDER_RGB
@@ -75,7 +88,7 @@ devices:
       dpi_config:
         virtual_channel: 0
         dpi_clk_src: MIPI_DSI_DPI_CLK_SRC_DEFAULT
-        dpi_clock_freq_mhz: 60
+        dpi_clock_freq_mhz: 80
         pixel_format: LCD_COLOR_PIXEL_FORMAT_RGB565
         in_color_format: LCD_COLOR_FMT_RGB565
         out_color_format: LCD_COLOR_FMT_RGB565
@@ -86,15 +99,44 @@ devices:
         video_timing:
           h_size: 800
           v_size: 1280
-          hsync_back_porch: 140
-          hsync_pulse_width: 40
+          hsync_back_porch: 20
+          hsync_pulse_width: 20
           hsync_front_porch: 40
-          vsync_back_porch: 16
+          vsync_back_porch: 10
           vsync_pulse_width: 4
-          vsync_front_porch: 16
+          vsync_front_porch: 30
     peripherals:
       - name: ldo_mipi
       - name: dsi_display
+
+  - name: lcd_touch
+    chip: gt911
+    type: lcd_touch_i2c
+    version: default
+    dependencies:
+      esp_lcd_touch:
+        version: "*"
+        require: public
+      espressif/esp_lcd_touch_gt911: "*"
+    config:
+      io_i2c_config:
+        dev_addr: [0x5D, 0x14]
+        lcd_cmd_bits: 16
+        scl_speed_hz: 100000
+        peripherals:
+          - name: i2c_master
+      touch_config:
+        x_max: 800
+        y_max: 1280
+        rst_gpio_num: -1
+        int_gpio_num: -1
+        levels:
+          reset: 0
+          interrupt: 0
+        flags:
+          swap_xy: false
+          mirror_x: false
+          mirror_y: false
 
   - name: lcd_brightness
     type: ledc_ctrl
