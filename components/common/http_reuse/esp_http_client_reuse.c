@@ -28,8 +28,27 @@
 esp_http_client_handle_t __real_esp_http_client_init(const esp_http_client_config_t *config);
 esp_err_t                __real_esp_http_client_cleanup(esp_http_client_handle_t client);
 esp_err_t                __real_esp_http_client_perform(esp_http_client_handle_t client);
+/*
+ * Available in newer ESP-IDF. Declare as weak so older toolchains that don't
+ * export this symbol can still link; we'll fall back at runtime.
+ */
+extern bool esp_http_client_is_persistent_connection(esp_http_client_handle_t client) __attribute__((weak));
 
 static const char *TAG = "http_reuse";
+
+static bool http_reuse_is_persistent_connection(esp_http_client_handle_t client)
+{
+    if (esp_http_client_is_persistent_connection) {
+        return esp_http_client_is_persistent_connection(client);
+    }
+    /*
+     * Compatibility fallback for IDF releases that don't provide
+     * esp_http_client_is_persistent_connection(). If there's no client error
+     * recorded, keep the handle reusable and let perform() retry logic handle
+     * stale sockets.
+     */
+    return esp_http_client_get_errno(client) == 0;
+}
 
 typedef struct http_reuse_endpoint {
     esp_http_client_transport_t transport;
@@ -458,7 +477,7 @@ esp_err_t __wrap_esp_http_client_cleanup(esp_http_client_handle_t client)
     pool_mutex_take();
     http_reuse_node_t *node       = pool_find_locked(client);
     bool               in_pool    = (node != NULL);
-    bool               persistent = esp_http_client_is_persistent_connection(client);
+    bool               persistent = http_reuse_is_persistent_connection(client);
 
     if (in_pool) {
         if (!persistent) {

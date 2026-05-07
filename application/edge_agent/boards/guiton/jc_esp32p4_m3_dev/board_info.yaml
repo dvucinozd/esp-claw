@@ -1,0 +1,5 @@
+board: jc_esp32p4_m3_dev
+chip: esp32p4
+version: 1.0.0
+description: "Guiton JC-ESP32P4-M3-DEV development board"
+manufacturer: "Guiton"
