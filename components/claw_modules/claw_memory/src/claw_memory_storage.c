@@ -61,12 +61,41 @@ esp_err_t claw_memory_load_index(cJSON **out_root)
     }
 
     root = cJSON_Parse(raw);
-    free(raw);
     if (!root || !cJSON_IsObject(root)) {
+        char backup_path[CLAW_MEMORY_MAX_PATH];
+        esp_err_t save_err;
+
         cJSON_Delete(root);
         ESP_LOGE(TAG, "Failed to parse memory index: %s", s_memory.index_path);
-        return ESP_FAIL;
+
+        backup_path[0] = '\0';
+        if (snprintf(backup_path, sizeof(backup_path), "%s.corrupt", s_memory.index_path) <
+            (int)sizeof(backup_path)) {
+            if (write_file_text(backup_path, raw) == ESP_OK) {
+                ESP_LOGW(TAG, "Saved corrupt memory index backup: %s", backup_path);
+            } else {
+                ESP_LOGW(TAG, "Failed to save corrupt memory index backup");
+            }
+        }
+
+        free(raw);
+        root = claw_memory_new_index_root();
+        if (!root) {
+            return ESP_ERR_NO_MEM;
+        }
+        save_err = claw_memory_save_index(root);
+        if (save_err != ESP_OK) {
+            ESP_LOGW(TAG, "Failed to rewrite memory index after recovery: %s",
+                     s_memory.index_path);
+        } else {
+            ESP_LOGW(TAG, "Recovered memory index by rewriting defaults: %s",
+                     s_memory.index_path);
+        }
+
+        *out_root = root;
+        return ESP_OK;
     }
+    free(raw);
 
     if (!cJSON_IsArray(cJSON_GetObjectItem(root, "summaries"))) {
         cJSON_ReplaceItemInObject(root, "summaries", cJSON_CreateArray());

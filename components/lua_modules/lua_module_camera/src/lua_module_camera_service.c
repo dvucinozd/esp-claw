@@ -18,6 +18,7 @@
 #include <unistd.h>
 
 #include "esp_jpeg_enc.h"
+#include "esp_cache.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "esp_video_ioctl.h"
@@ -38,6 +39,9 @@ static esp_err_t camera_settle_stream_locked(int64_t deadline_us);
 static void camera_fourcc_to_string(uint32_t pixel_format, char out[5]);
 static esp_err_t camera_requeue_buffer_locked(struct v4l2_buffer *buffer);
 static esp_err_t camera_errno_to_err(int err);
+static esp_err_t camera_sync_buffer_for_cpu_locked(uint32_t index, size_t bytes);
+static uint32_t camera_frame_hash_sample(const uint8_t *data, size_t len);
+static void camera_apply_runtime_tuning_locked(void);
 
 typedef struct {
     SemaphoreHandle_t lock;
@@ -55,6 +59,11 @@ typedef struct {
     uint32_t width;
     uint32_t height;
     uint32_t pixel_format;
+    uint32_t last_sequence;
+    bool last_sequence_valid;
+    uint32_t last_frame_hash;
+    bool last_frame_hash_valid;
+    uint32_t same_frame_streak;
     jpeg_enc_handle_t jpeg_encoder;
     uint8_t *jpeg_buffer;
     uint32_t jpeg_buffer_size;
@@ -134,6 +143,91 @@ static esp_err_t camera_errno_to_err(int err)
     }
 }
 
+static esp_err_t camera_sync_buffer_for_cpu_locked(uint32_t index, size_t bytes)
+{
+    if (index >= s_camera.buffer_count) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (s_camera.buffers[index] == NULL || s_camera.buffer_lengths[index] == 0) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (bytes == 0 || bytes > s_camera.buffer_lengths[index]) {
+        bytes = s_camera.buffer_lengths[index];
+    }
+
+    /* ESP32-P4 camera buffers are DMA-updated. Invalidate D-cache view before CPU reads
+     * to avoid reusing stale lines from a previous frame. */
+    esp_err_t err = esp_cache_msync(
+        s_camera.buffers[index],
+        bytes,
+        ESP_CACHE_MSYNC_FLAG_DIR_M2C | ESP_CACHE_MSYNC_FLAG_TYPE_DATA
+    );
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "esp_cache_msync failed for frame buffer %u: %s",
+                 (unsigned)index, esp_err_to_name(err));
+    }
+    return err;
+}
+
+static uint32_t camera_frame_hash_sample(const uint8_t *data, size_t len)
+{
+    const uint32_t fnv_offset = 2166136261u;
+    const uint32_t fnv_prime = 16777619u;
+    uint32_t hash = fnv_offset;
+    size_t step;
+
+    if (data == NULL || len == 0) {
+        return 0;
+    }
+
+    step = len / 256;
+    if (step == 0) {
+        step = 1;
+    }
+
+    for (size_t i = 0; i < len; i += step) {
+        hash ^= data[i];
+        hash *= fnv_prime;
+    }
+
+    hash ^= data[len - 1];
+    hash *= fnv_prime;
+    return hash;
+}
+
+static void camera_apply_runtime_tuning_locked(void)
+{
+    struct {
+        uint32_t id;
+        int32_t value;
+        const char *name;
+    } controls[] = {
+        { V4L2_CID_AUTOGAIN, 1, "autogain" },
+        { V4L2_CID_AUTO_WHITE_BALANCE, 1, "auto_white_balance" },
+        { V4L2_CID_EXPOSURE_AUTO, V4L2_EXPOSURE_AUTO, "exposure_auto" },
+        { V4L2_CID_BRIGHTNESS, 12, "brightness" },
+        { V4L2_CID_SATURATION, 140, "saturation" },
+    };
+
+    for (size_t i = 0; i < sizeof(controls) / sizeof(controls[0]); ++i) {
+        struct v4l2_control ctrl = {
+            .id = controls[i].id,
+            .value = controls[i].value,
+        };
+
+        if (ioctl(s_camera.fd, VIDIOC_S_CTRL, &ctrl) == 0) {
+            ESP_LOGI(TAG, "camera ctrl set: %s=%ld",
+                     controls[i].name, (long)controls[i].value);
+            continue;
+        }
+
+        if (errno != EINVAL && errno != ENOTTY && errno != EBUSY) {
+            ESP_LOGW(TAG, "camera ctrl set failed: %s errno=%d",
+                     controls[i].name, errno);
+        }
+    }
+}
+
 static void camera_release_encoder_locked(void)
 {
     if (s_camera.jpeg_buffer != NULL) {
@@ -207,6 +301,11 @@ static void camera_close_locked(void)
     s_camera.width = 0;
     s_camera.height = 0;
     s_camera.pixel_format = 0;
+    s_camera.last_sequence = 0;
+    s_camera.last_sequence_valid = false;
+    s_camera.last_frame_hash = 0;
+    s_camera.last_frame_hash_valid = false;
+    s_camera.same_frame_streak = 0;
 }
 
 static esp_err_t camera_prepare_encoder_locked(void)
@@ -411,10 +510,16 @@ static esp_err_t camera_open_locked(const char *dev_path)
     s_camera.streaming = true;
     s_camera.opened = true;
     s_camera.settled_frames = 0;
+    s_camera.last_sequence = 0;
+    s_camera.last_sequence_valid = false;
+    s_camera.last_frame_hash = 0;
+    s_camera.last_frame_hash_valid = false;
+    s_camera.same_frame_streak = 0;
 
     ESP_LOGI(TAG, "Camera opened: path=%s size=%ux%u format=%s",
              dev_path, (unsigned)s_camera.width, (unsigned)s_camera.height,
              pixel_format);
+    camera_apply_runtime_tuning_locked();
 
     /* Settle the stream at open time with a dedicated timeout so that capture()
      * calls are not penalised by the sensor warm-up delay. */
@@ -572,7 +677,51 @@ static esp_err_t camera_get_frame_locked(int timeout_ms, struct v4l2_buffer *buf
 
         err = camera_validate_buffer_locked(buffer, frame_bytes);
         if (err == ESP_OK) {
+            if (s_camera.last_sequence_valid &&
+                buffer->sequence == s_camera.last_sequence) {
+                if (camera_requeue_buffer_locked(buffer) != ESP_OK) {
+                    camera_close_locked();
+                    return ESP_FAIL;
+                }
+                continue;
+            }
+
+            s_camera.last_sequence = buffer->sequence;
+            s_camera.last_sequence_valid = true;
             *frame_data = s_camera.buffers[buffer->index];
+            (void)camera_sync_buffer_for_cpu_locked(buffer->index, *frame_bytes);
+
+            uint32_t frame_hash = camera_frame_hash_sample(*frame_data, *frame_bytes);
+            if (s_camera.last_frame_hash_valid && frame_hash == s_camera.last_frame_hash) {
+                s_camera.same_frame_streak++;
+                if (s_camera.same_frame_streak >= 6) {
+                    int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+                    ESP_LOGW(TAG, "detected repeated frame hash (streak=%" PRIu32 "), restarting stream",
+                             s_camera.same_frame_streak);
+                    if (camera_requeue_buffer_locked(buffer) != ESP_OK) {
+                        camera_close_locked();
+                        return ESP_FAIL;
+                    }
+                    if (ioctl(s_camera.fd, VIDIOC_STREAMOFF, &type) != 0) {
+                        ESP_LOGW(TAG, "VIDIOC_STREAMOFF during recovery failed (errno=%d)", errno);
+                    }
+                    if (ioctl(s_camera.fd, VIDIOC_STREAMON, &type) != 0) {
+                        ESP_LOGW(TAG, "VIDIOC_STREAMON during recovery failed (errno=%d)", errno);
+                        camera_close_locked();
+                        return ESP_FAIL;
+                    }
+                    s_camera.settled_frames = 0;
+                    s_camera.last_sequence_valid = false;
+                    s_camera.last_frame_hash_valid = false;
+                    s_camera.same_frame_streak = 0;
+                    continue;
+                }
+            } else {
+                s_camera.same_frame_streak = 0;
+            }
+
+            s_camera.last_frame_hash = frame_hash;
+            s_camera.last_frame_hash_valid = true;
             if (timestamp_us != NULL) {
                 *timestamp_us = esp_timer_get_time();
             }
